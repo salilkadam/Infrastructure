@@ -43,8 +43,28 @@ jobs:
                 echo "Please fix deprecated configurations"
                 exit 1
               fi
-              # Validate YAML syntax
-              python3 -c "import yaml; yaml.safe_load(open('/tmp/base-manifests.yaml'))" || exit 1
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+              " || exit 1
               echo "✅ $app validation passed"
             else
               echo "❌ Failed to build $app"
@@ -69,8 +89,28 @@ jobs:
                 echo "Please fix deprecated configurations"
                 exit 1
               fi
-              # Validate YAML syntax
-              python3 -c "import yaml; yaml.safe_load(open('/tmp/overlay-manifests.yaml'))" || exit 1
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+              " || exit 1
               echo "✅ $overlay validation passed"
             else
               echo "❌ Failed to build $overlay"
@@ -96,7 +136,7 @@ jobs:
           if [ -f "$app" ]; then
             echo "📋 Validating $app"
             # Validate YAML syntax only (no cluster connection required)
-            python3 -c "import yaml; yaml.safe_load(open('$app'))" || exit 1
+            python3 -c "import yaml; list(yaml.safe_load_all(open('$app')))" || exit 1
             echo "✅ $app validation passed"
           fi
         done 
