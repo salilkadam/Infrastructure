@@ -4,6 +4,5 @@ metadata:
   name: minio-config
   namespace: minio
 data:
-  MINIO_SERVER_URL: "http://localhost:9000"
   MINIO_CONSOLE_ADDRESS: ":9001"
   MINIO_API_SELECT_POOL: "on" 
