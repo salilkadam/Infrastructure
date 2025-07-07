@@ -21,22 +21,13 @@ patches:
       path: /spec/rules/0/host
       value: minio-staging.askcollections.com
     - op: replace
-      path: /spec/rules/1/host
-      value: minio-console-staging.askcollections.com
-    - op: replace
       path: /spec/tls/0/hosts/0
       value: minio-staging.askcollections.com
-    - op: replace
-      path: /spec/tls/0/hosts/1
-      value: minio-console-staging.askcollections.com
 
 - target:
     kind: ConfigMap
     name: minio-config
   patch: |-
-    - op: replace
-      path: /data/MINIO_BROWSER_REDIRECT_URL
-      value: "https://minio-staging.askcollections.com"
     - op: replace
       path: /data/MINIO_SERVER_URL
       value: "https://minio-staging.askcollections.com"

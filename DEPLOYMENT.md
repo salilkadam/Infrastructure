@@ -61,8 +61,10 @@ kubectl get pvc -n minio
 ### 5. Access MinIO
 
 Once deployed, you can access MinIO at:
-- **API**: `https://minio-dev.askcollections.com`
-- **Console**: `https://minio-console-dev.askcollections.com`
+- **API**: `https://minio-dev.askcollections.com` (SSL enabled)
+- **Console**: `http://NODE_IP:30001` (Internal NodePort access only)
+
+Replace `NODE_IP` with your K3s node IP address.
 
 Default credentials:
 - Username: `admin`
@@ -72,9 +74,11 @@ Default credentials:
 
 For production, ensure you:
 1. Update credentials in the secret
-2. Switch to `letsencrypt-prod` cluster issuer
+2. Switch to `letsencrypt-prod` cluster issuer (API SSL only)
 3. Update resource limits as needed
 4. Configure monitoring and backup strategies
+5. Consider VPN or bastion host for console access
+6. Review NodePort security (console is accessible on all nodes)
 
 ## Troubleshooting
 
@@ -92,9 +96,15 @@ kubectl get storageclass
 # Check cluster issuer
 kubectl get clusterissuer
 
-# Check certificates
+# Check certificates (API only)
 kubectl get certificates -A
 
 # View ArgoCD applications
 kubectl get applications -n argocd
+
+# Check console NodePort service
+kubectl get svc minio-console-service -n minio
+
+# Get node IPs for console access
+kubectl get nodes -o wide
 ``` 

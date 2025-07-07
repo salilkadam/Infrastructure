@@ -13,7 +13,6 @@ spec:
   tls:
   - hosts:
     - minio.askcollections.com
-    - minio-console.askcollections.com
     secretName: minio-tls
   rules:
   - host: minio.askcollections.com
@@ -25,14 +24,4 @@ spec:
           service:
             name: minio-service
             port:
-              number: 9000
-  - host: minio-console.askcollections.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: minio-service
-            port:
-              number: 9001 
+              number: 9000 

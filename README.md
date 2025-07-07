@@ -36,17 +36,18 @@ This repository contains Kubernetes manifests and ArgoCD applications for deploy
 
 MinIO is configured with:
 - **Storage**: Uses `nfs-client` storage class
-- **SSL**: Uses `letsencrypt-staging` for SSL certificates
-- **Ingress**: Exposes both API (port 9000) and Console (port 9001)
+- **SSL**: Uses `letsencrypt-staging` for SSL certificates (API only)
+- **Ingress**: Exposes only the API (port 9000) with SSL
+- **Console**: Available internally via NodePort (port 30001) 
 - **High Availability**: Configured for production with multiple replicas
 
 #### Environment-Specific Configurations
 
-| Environment | Storage | Replicas | Hostnames |
-|-------------|---------|----------|-----------|
-| Development | 20Gi    | 1        | minio-dev.askcollections.com, minio-console-dev.askcollections.com |
-| Staging     | 50Gi    | 1        | minio-staging.askcollections.com, minio-console-staging.askcollections.com |
-| Production  | 200Gi   | 2        | minio-prod.askcollections.com, minio-console-prod.askcollections.com |
+| Environment | Storage | Replicas | API Hostname | Console Access |
+|-------------|---------|----------|--------------|----------------|
+| Development | 20Gi    | 1        | minio-dev.askcollections.com | NodePort 30001 |
+| Staging     | 50Gi    | 1        | minio-staging.askcollections.com | NodePort 30001 |
+| Production  | 200Gi   | 2        | minio-prod.askcollections.com | NodePort 30001 |
 
 #### Default Credentials
 
@@ -129,10 +130,10 @@ MinIO includes built-in health checks:
 # Check MinIO pods
 kubectl get pods -n minio
 
-# Check MinIO service
+# Check MinIO services (API ClusterIP + Console NodePort)
 kubectl get svc -n minio
 
-# Check ingress
+# Check ingress (API only)
 kubectl get ingress -n minio
 
 # Check PVC
@@ -140,6 +141,9 @@ kubectl get pvc -n minio
 
 # View logs
 kubectl logs -n minio deployment/minio-deployment
+
+# Access console internally (replace NODE_IP with your K3s node IP)
+# Console URL: http://NODE_IP:30001
 ```
 
 ## Contributing
