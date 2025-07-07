@@ -24,23 +24,59 @@ jobs:
         curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
         sudo mv kustomize /usr/local/bin/
         
+    - name: Install Python YAML parser
+      run: |
+        pip3 install PyYAML
+        
     - name: Validate base manifests
       run: |
-        echo "Validating base manifests..."
+        echo "🔍 Validating MinIO base manifests..."
         for app in applications/*/base; do
           if [ -f "$app/kustomization.yaml" ]; then
-            echo "Validating $app"
-            kustomize build "$app" | kubectl apply --dry-run=client -f -
+            echo "📋 Building and validating $app"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "$app" > /tmp/base-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax
+              python3 -c "import yaml; yaml.safe_load(open('/tmp/base-manifests.yaml'))" || exit 1
+              echo "✅ $app validation passed"
+            else
+              echo "❌ Failed to build $app"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
           fi
         done
         
     - name: Validate overlays
       run: |
-        echo "Validating overlay manifests..."
+        echo "🔍 Validating MinIO overlay manifests..."
         for overlay in applications/*/overlays/*; do
           if [ -f "$overlay/kustomization.yaml" ]; then
-            echo "Validating $overlay"
-            kustomize build "$overlay" | kubectl apply --dry-run=client -f -
+            echo "📋 Building and validating $overlay"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "$overlay" > /tmp/overlay-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax
+              python3 -c "import yaml; yaml.safe_load(open('/tmp/overlay-manifests.yaml'))" || exit 1
+              echo "✅ $overlay validation passed"
+            else
+              echo "❌ Failed to build $overlay"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
           fi
         done
         
@@ -55,10 +91,12 @@ jobs:
         
     - name: Validate ArgoCD Applications
       run: |
-        echo "Validating ArgoCD applications..."
+        echo "🔍 Validating ArgoCD applications..."
         for app in applications/*/argocd-app.yaml; do
           if [ -f "$app" ]; then
-            echo "Validating $app"
-            kubectl apply --dry-run=client -f "$app"
+            echo "📋 Validating $app"
+            # Validate YAML syntax only (no cluster connection required)
+            python3 -c "import yaml; yaml.safe_load(open('$app'))" || exit 1
+            echo "✅ $app validation passed"
           fi
         done 
