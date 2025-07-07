@@ -53,5 +53,13 @@ patches:
       path: /spec/tls/0/hosts/0
       value: minio.askcollections.com
 
+- target:
+    kind: Certificate
+    name: minio-internal-ca
+  patch: |-
+    - op: replace
+      path: /spec/issuerRef/name
+      value: "prod-minio-selfsigned-clusterissuer-prod"
+
 namePrefix: prod-
 nameSuffix: -prod 
