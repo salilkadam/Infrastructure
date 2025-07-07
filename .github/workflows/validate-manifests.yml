@@ -1,0 +1,64 @@
+name: Validate Kubernetes Manifests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  validate-manifests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+        
+    - name: Set up Kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+        
+    - name: Validate base manifests
+      run: |
+        echo "Validating base manifests..."
+        for app in applications/*/base; do
+          if [ -f "$app/kustomization.yaml" ]; then
+            echo "Validating $app"
+            kustomize build "$app" | kubectl apply --dry-run=client -f -
+          fi
+        done
+        
+    - name: Validate overlays
+      run: |
+        echo "Validating overlay manifests..."
+        for overlay in applications/*/overlays/*; do
+          if [ -f "$overlay/kustomization.yaml" ]; then
+            echo "Validating $overlay"
+            kustomize build "$overlay" | kubectl apply --dry-run=client -f -
+          fi
+        done
+        
+    - name: Check for secrets in manifests
+      run: |
+        echo "Checking for potential secrets..."
+        if grep -r "password\|secret\|key" --include="*.yaml" --include="*.yml" applications/ | grep -v "secretKeyRef\|name.*secret\|name.*key"; then
+          echo "⚠️  Potential secrets found in manifests. Please review."
+          exit 1
+        fi
+        echo "✅ No hardcoded secrets found."
+        
+    - name: Validate ArgoCD Applications
+      run: |
+        echo "Validating ArgoCD applications..."
+        for app in applications/*/argocd-app.yaml; do
+          if [ -f "$app" ]; then
+            echo "Validating $app"
+            kubectl apply --dry-run=client -f "$app"
+          fi
+        done 

@@ -1,0 +1,154 @@
+# Infrastructure K8s - ArgoCD Applications
+
+This repository contains Kubernetes manifests and ArgoCD applications for deploying infrastructure components on a K3s cluster using GitOps principles.
+
+## Repository Structure
+
+```
+.
+├── applications/           # Application-specific manifests
+│   └── minio/             # MinIO object storage
+│       ├── base/          # Base Kubernetes manifests
+│       ├── overlays/      # Environment-specific overlays
+│       │   ├── dev/       # Development environment
+│       │   ├── staging/   # Staging environment
+│       │   └── prod/      # Production environment
+│       └── argocd-app.yaml # ArgoCD Application manifest
+├── environments/          # Environment-specific configurations
+│   ├── dev/
+│   ├── staging/
+│   └── prod/
+├── projects/              # ArgoCD Project definitions
+└── README.md
+```
+
+## Prerequisites
+
+- K3s cluster with the following components already configured:
+  - **Storage Class**: `nfs-client` (for persistent storage)
+  - **SSL/TLS**: `letsencrypt-staging` cluster issuer (for SSL certificates)
+  - **Ingress Controller**: NGINX Ingress Controller
+  - **ArgoCD**: Installed and configured
+
+## Applications
+
+### MinIO Object Storage
+
+MinIO is configured with:
+- **Storage**: Uses `nfs-client` storage class
+- **SSL**: Uses `letsencrypt-staging` for SSL certificates
+- **Ingress**: Exposes both API (port 9000) and Console (port 9001)
+- **High Availability**: Configured for production with multiple replicas
+
+#### Environment-Specific Configurations
+
+| Environment | Storage | Replicas | Hostnames |
+|-------------|---------|----------|-----------|
+| Development | 20Gi    | 1        | minio-dev.example.com, minio-console-dev.example.com |
+| Staging     | 50Gi    | 1        | minio-staging.example.com, minio-console-staging.example.com |
+| Production  | 200Gi   | 2        | minio-prod.example.com, minio-console-prod.example.com |
+
+#### Default Credentials
+
+- **Username**: `admin`
+- **Password**: `password`
+
+> **⚠️ Important**: Change these credentials in production environments by updating the secret in the respective overlay.
+
+## Deployment
+
+### Using ArgoCD
+
+1. Apply the ArgoCD application:
+```bash
+kubectl apply -f applications/minio/argocd-app.yaml
+```
+
+2. Access ArgoCD UI and sync the application
+
+### Manual Deployment
+
+For testing or manual deployment:
+
+```bash
+# Deploy to development
+kubectl apply -k applications/minio/overlays/dev
+
+# Deploy to staging
+kubectl apply -k applications/minio/overlays/staging
+
+# Deploy to production
+kubectl apply -k applications/minio/overlays/prod
+```
+
+## Customization
+
+### Updating Hostnames
+
+Update the hostnames in the environment-specific overlays:
+- `applications/minio/overlays/{env}/kustomization.yaml`
+
+### Updating Storage
+
+Modify the storage size in the PVC patches within the overlay files.
+
+### Updating Credentials
+
+Create new base64 encoded credentials:
+```bash
+echo -n "your-username" | base64
+echo -n "your-password" | base64
+```
+
+Update the secret in the base configuration or create an overlay patch.
+
+## Monitoring
+
+MinIO includes built-in health checks:
+- **Liveness Probe**: `/minio/health/live`
+- **Readiness Probe**: `/minio/health/ready`
+
+## Security Considerations
+
+1. **Credentials**: Update default credentials for production
+2. **SSL**: Switch to `letsencrypt-prod` for production environments
+3. **Network Policies**: Consider implementing network policies for enhanced security
+4. **RBAC**: Implement proper RBAC for MinIO access
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Storage Class Not Found**: Ensure `nfs-client` storage class is installed
+2. **SSL Certificate Issues**: Verify `letsencrypt-staging` cluster issuer is working
+3. **Ingress Issues**: Check NGINX ingress controller status
+
+### Useful Commands
+
+```bash
+# Check MinIO pods
+kubectl get pods -n minio
+
+# Check MinIO service
+kubectl get svc -n minio
+
+# Check ingress
+kubectl get ingress -n minio
+
+# Check PVC
+kubectl get pvc -n minio
+
+# View logs
+kubectl logs -n minio deployment/minio-deployment
+```
+
+## Contributing
+
+1. Make changes to the appropriate overlay or base configuration
+2. Test changes in development environment first
+3. Commit changes with descriptive messages
+4. ArgoCD will automatically sync changes based on the configured sync policy
+
+## License
+
+This project is licensed under the MIT License. 

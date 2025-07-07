@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+patches:
+- target:
+    kind: PersistentVolumeClaim
+    name: minio-storage
+  patch: |-
+    - op: replace
+      path: /spec/resources/requests/storage
+      value: 20Gi
+
+- target:
+    kind: Ingress
+    name: minio-ingress
+  patch: |-
+    - op: replace
+      path: /spec/rules/0/host
+      value: minio-dev.example.com
+    - op: replace
+      path: /spec/rules/1/host
+      value: minio-console-dev.example.com
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: minio-dev.example.com
+    - op: replace
+      path: /spec/tls/0/hosts/1
+      value: minio-console-dev.example.com
+
+- target:
+    kind: ConfigMap
+    name: minio-config
+  patch: |-
+    - op: replace
+      path: /data/MINIO_BROWSER_REDIRECT_URL
+      value: "https://minio-dev.example.com"
+    - op: replace
+      path: /data/MINIO_SERVER_URL
+      value: "https://minio-dev.example.com"
+
+namePrefix: dev-
+nameSuffix: -dev 

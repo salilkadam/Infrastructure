@@ -1,0 +1,52 @@
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment files (should be handled via overlays)
+.env
+.env.local
+.env.*.local
+
+# Kubernetes temporary files
+*.yaml.tmp
+*.yml.tmp
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+
+# Node modules (if using any JS tools)
+node_modules/
+
+# Python cache (if using Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Helm charts cache
+charts/
+
+# ArgoCD generated files
+argocd-generated/ 
