@@ -58,7 +58,54 @@ MinIO is configured with:
 
 ## Deployment
 
-### Using ArgoCD
+### Option 1: CI/CD with GitHub Actions (Recommended)
+
+This repository includes comprehensive CI/CD pipelines for automated deployment with SSL certificate management.
+
+#### Quick Setup
+
+1. **Configure GitHub Repository**
+   ```bash
+   # Check prerequisites
+   ./scripts/setup-repository.sh prerequisites
+   
+   # Configure your GitHub repository
+   ./scripts/setup-repository.sh configure-remote https://github.com/USERNAME/k3s-minio-infrastructure.git
+   
+   # Generate secrets for GitHub
+   ./scripts/setup-repository.sh secrets
+   
+   # Push to GitHub
+   ./scripts/setup-repository.sh push
+   ```
+
+2. **Deploy via GitHub Actions**
+   ```bash
+   # Manual deployment trigger
+   gh workflow run deploy-minio.yml -f environment=prod
+   
+   # Check deployment status
+   gh run list
+   ```
+
+3. **Monitor certificates**
+   ```bash
+   # Check certificate status
+   gh workflow run certificate-monitoring.yml -f action=check
+   ```
+
+#### CI/CD Features
+
+- ✅ **Automated SSL Certificate Management** - Self-signed CA with auto-renewal
+- ✅ **Multi-Environment Support** - dev, staging, prod with protection rules
+- ✅ **Security Scanning** - Trivy security scans and secret detection
+- ✅ **SSL Testing** - Automated SSL connectivity verification
+- ✅ **Certificate Monitoring** - Daily certificate health checks
+- ✅ **Deployment Validation** - Manifest validation and dry-run testing
+
+For detailed CI/CD setup instructions, see [`CICD_SETUP.md`](CICD_SETUP.md).
+
+### Option 2: Using ArgoCD
 
 1. Apply the ArgoCD application:
 ```bash
@@ -67,11 +114,14 @@ kubectl apply -f applications/minio/argocd-app.yaml
 
 2. Access ArgoCD UI and sync the application
 
-### Manual Deployment
+### Option 3: Manual Deployment
 
 For testing or manual deployment:
 
 ```bash
+# Deploy certificates first
+./scripts/deploy-minio-certificates.sh deploy
+
 # Deploy to development
 kubectl apply -k applications/minio/overlays/dev
 
