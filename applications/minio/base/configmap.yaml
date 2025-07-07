@@ -4,7 +4,7 @@ metadata:
   name: minio-config
   namespace: minio
 data:
-  MINIO_BROWSER_REDIRECT_URL: "https://minio.example.com"
-  MINIO_SERVER_URL: "https://minio.example.com"
+  MINIO_BROWSER_REDIRECT_URL: "https://minio.askcollections.com"
+  MINIO_SERVER_URL: "https://minio.askcollections.com"
   MINIO_CONSOLE_ADDRESS: ":9001"
   MINIO_API_SELECT_POOL: "on" 

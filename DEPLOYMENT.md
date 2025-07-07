@@ -26,11 +26,11 @@ spec:
 ```
 
 #### Update Hostnames
-Update the domain names in overlays to match your environment:
+The domain names have been configured to use `askcollections.com`:
 - `applications/minio/overlays/dev/kustomization.yaml`
 - `applications/minio/overlays/prod/kustomization.yaml`
 
-Replace `example.com` with your actual domain.
+Update these files if you need to use a different domain.
 
 ### 3. Deploy to ArgoCD
 
@@ -61,8 +61,8 @@ kubectl get pvc -n minio
 ### 5. Access MinIO
 
 Once deployed, you can access MinIO at:
-- **API**: `https://minio-dev.yourdomain.com` (or your configured domain)
-- **Console**: `https://minio-console-dev.yourdomain.com`
+- **API**: `https://minio-dev.askcollections.com`
+- **Console**: `https://minio-console-dev.askcollections.com`
 
 Default credentials:
 - Username: `admin`

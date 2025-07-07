@@ -44,9 +44,9 @@ MinIO is configured with:
 
 | Environment | Storage | Replicas | Hostnames |
 |-------------|---------|----------|-----------|
-| Development | 20Gi    | 1        | minio-dev.example.com, minio-console-dev.example.com |
-| Staging     | 50Gi    | 1        | minio-staging.example.com, minio-console-staging.example.com |
-| Production  | 200Gi   | 2        | minio-prod.example.com, minio-console-prod.example.com |
+| Development | 20Gi    | 1        | minio-dev.askcollections.com, minio-console-dev.askcollections.com |
+| Staging     | 50Gi    | 1        | minio-staging.askcollections.com, minio-console-staging.askcollections.com |
+| Production  | 200Gi   | 2        | minio-prod.askcollections.com, minio-console-prod.askcollections.com |
 
 #### Default Credentials
 
