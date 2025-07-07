@@ -24,13 +24,7 @@ patches:
       path: /spec/tls/0/hosts/0
       value: minio-staging.askcollections.com
 
-- target:
-    kind: ConfigMap
-    name: minio-config
-  patch: |-
-    - op: replace
-      path: /data/MINIO_SERVER_URL
-      value: "https://minio-staging.askcollections.com"
+
 
 namePrefix: staging-
 nameSuffix: -staging 

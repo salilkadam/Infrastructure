@@ -42,10 +42,10 @@ patches:
       value: "letsencrypt-prod"
     - op: replace
       path: /spec/rules/0/host
-      value: minio-prod.askcollections.com
+      value: minio.askcollections.com
     - op: replace
       path: /spec/tls/0/hosts/0
-      value: minio-prod.askcollections.com
+      value: minio.askcollections.com
 
 - target:
     kind: ConfigMap
@@ -53,7 +53,7 @@ patches:
   patch: |-
     - op: replace
       path: /data/MINIO_SERVER_URL
-      value: "https://minio-prod.askcollections.com"
+      value: "https://minio.askcollections.com"
 
 namePrefix: prod-
 nameSuffix: -prod 
