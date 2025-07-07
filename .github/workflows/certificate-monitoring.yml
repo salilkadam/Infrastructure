@@ -1,0 +1,296 @@
+name: Certificate Monitoring and Maintenance
+
+on:
+  schedule:
+    # Run every day at 6 AM UTC to check certificate status
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+        - check
+        - renew
+        - report
+
+env:
+  KUBECTL_VERSION: v1.28.0
+
+jobs:
+  check-certificates:
+    name: Check Certificate Status
+    runs-on: ubuntu-latest
+    outputs:
+      renewal-needed: ${{ steps.cert-check.outputs.renewal-needed }}
+      cert-status: ${{ steps.cert-check.outputs.status }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        kubectl version --client
+        
+    - name: Check certificate status
+      id: cert-check
+      run: |
+        echo "🔍 Checking MinIO certificate status..."
+        
+        # Check if certificates exist
+        if ! kubectl get certificate minio-internal-ca -n minio &>/dev/null; then
+          echo "❌ CA certificate not found"
+          echo "renewal-needed=true" >> $GITHUB_OUTPUT
+          echo "status=missing" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if ! kubectl get certificate minio-internal-tls -n minio &>/dev/null; then
+          echo "❌ TLS certificate not found"
+          echo "renewal-needed=true" >> $GITHUB_OUTPUT
+          echo "status=missing" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Check certificate readiness
+        CA_READY=$(kubectl get certificate minio-internal-ca -n minio -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+        TLS_READY=$(kubectl get certificate minio-internal-tls -n minio -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+        
+        if [ "$CA_READY" != "True" ] || [ "$TLS_READY" != "True" ]; then
+          echo "❌ Certificates not ready - CA: $CA_READY, TLS: $TLS_READY"
+          echo "renewal-needed=true" >> $GITHUB_OUTPUT
+          echo "status=not-ready" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Check certificate expiration
+        echo "📅 Checking certificate expiration dates..."
+        
+        # Get TLS certificate expiration
+        TLS_SECRET=$(kubectl get secret minio-internal-tls -n minio -o jsonpath='{.data.tls\.crt}' | base64 -d)
+        TLS_EXPIRY=$(echo "$TLS_SECRET" | openssl x509 -noout -enddate | cut -d= -f2)
+        TLS_EXPIRY_EPOCH=$(date -d "$TLS_EXPIRY" +%s)
+        CURRENT_EPOCH=$(date +%s)
+        DAYS_UNTIL_EXPIRY=$(( (TLS_EXPIRY_EPOCH - CURRENT_EPOCH) / 86400 ))
+        
+        echo "TLS Certificate expires: $TLS_EXPIRY ($DAYS_UNTIL_EXPIRY days)"
+        
+        # Check if renewal is needed (less than 15 days)
+        if [ $DAYS_UNTIL_EXPIRY -lt 15 ]; then
+          echo "⚠️  TLS certificate expires in $DAYS_UNTIL_EXPIRY days - renewal needed"
+          echo "renewal-needed=true" >> $GITHUB_OUTPUT
+          echo "status=expiring" >> $GITHUB_OUTPUT
+        else
+          echo "✅ Certificates are healthy ($DAYS_UNTIL_EXPIRY days until expiry)"
+          echo "renewal-needed=false" >> $GITHUB_OUTPUT
+          echo "status=healthy" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Test SSL connectivity
+      run: |
+        echo "🔍 Testing SSL connectivity..."
+        
+        # Extract CA certificate
+        chmod +x scripts/extract-minio-ca.sh
+        ./scripts/extract-minio-ca.sh extract
+        
+        # Test internal endpoints
+        echo "Testing internal SSL endpoints..."
+        NODES=(192.168.0.10 192.168.0.200 192.168.0.201 192.168.0.202 192.168.0.203 192.168.0.204)
+        SUCCESS_COUNT=0
+        
+        for NODE in "${NODES[@]}"; do
+          if curl --cacert minio-ca.crt -s --max-time 5 -I "https://$NODE:30001" | grep -q "200"; then
+            echo "✅ $NODE:30001 - SSL OK"
+            ((SUCCESS_COUNT++))
+          else
+            echo "❌ $NODE:30001 - SSL FAILED"
+          fi
+        done
+        
+        echo "SSL Test Results: $SUCCESS_COUNT/${#NODES[@]} nodes accessible"
+        
+        if [ $SUCCESS_COUNT -eq 0 ]; then
+          echo "❌ All SSL connections failed"
+          exit 1
+        fi
+
+  renew-certificates:
+    name: Renew Certificates
+    runs-on: ubuntu-latest
+    needs: check-certificates
+    if: needs.check-certificates.outputs.renewal-needed == 'true' || github.event.inputs.action == 'renew'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        
+    - name: Force certificate renewal
+      run: |
+        echo "🔄 Forcing certificate renewal..."
+        
+        # Delete TLS secret to force renewal
+        kubectl delete secret minio-internal-tls -n minio --ignore-not-found=true
+        
+        # Wait for certificate renewal
+        echo "⏳ Waiting for certificate renewal..."
+        kubectl wait --for=condition=ready certificate minio-internal-tls -n minio --timeout=300s
+        
+        echo "✅ Certificate renewal completed"
+        
+    - name: Restart MinIO pods
+      run: |
+        echo "🔄 Restarting MinIO pods to pick up new certificates..."
+        kubectl rollout restart deployment/prod-minio-deployment-prod -n minio
+        kubectl rollout status deployment/prod-minio-deployment-prod -n minio --timeout=300s
+        
+    - name: Verify renewed certificates
+      run: |
+        echo "🔍 Verifying renewed certificates..."
+        
+        # Extract new CA certificate
+        chmod +x scripts/extract-minio-ca.sh
+        ./scripts/extract-minio-ca.sh extract
+        
+        # Test SSL connectivity
+        ./scripts/extract-minio-ca.sh test
+
+  generate-report:
+    name: Generate Certificate Report
+    runs-on: ubuntu-latest
+    needs: [check-certificates]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        
+    - name: Generate certificate report
+      run: |
+        echo "📊 Generating certificate status report..."
+        
+        REPORT_FILE="certificate-report-$(date +%Y%m%d).md"
+        
+        cat > $REPORT_FILE << 'EOF'
+        # MinIO Certificate Status Report
+        
+        **Report Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+        **Cluster:** $(kubectl config current-context)
+        
+        ## Certificate Status
+        
+        EOF
+        
+        # Get certificate details
+        if kubectl get certificate minio-internal-ca -n minio &>/dev/null; then
+          echo "### CA Certificate" >> $REPORT_FILE
+          kubectl get certificate minio-internal-ca -n minio -o yaml | grep -A 10 "status:" >> $REPORT_FILE
+          echo "" >> $REPORT_FILE
+        fi
+        
+        if kubectl get certificate minio-internal-tls -n minio &>/dev/null; then
+          echo "### TLS Certificate" >> $REPORT_FILE
+          kubectl get certificate minio-internal-tls -n minio -o yaml | grep -A 10 "status:" >> $REPORT_FILE
+          echo "" >> $REPORT_FILE
+        fi
+        
+        # Get secret details
+        echo "### Secrets" >> $REPORT_FILE
+        kubectl get secrets -n minio | grep minio-internal >> $REPORT_FILE
+        echo "" >> $REPORT_FILE
+        
+        # Certificate expiration details
+        if kubectl get secret minio-internal-tls -n minio &>/dev/null; then
+          echo "### Certificate Expiration" >> $REPORT_FILE
+          TLS_CERT=$(kubectl get secret minio-internal-tls -n minio -o jsonpath='{.data.tls\.crt}' | base64 -d)
+          echo '```' >> $REPORT_FILE
+          echo "$TLS_CERT" | openssl x509 -noout -dates >> $REPORT_FILE
+          echo "$TLS_CERT" | openssl x509 -noout -subject >> $REPORT_FILE
+          echo "$TLS_CERT" | openssl x509 -noout -text | grep -A 10 "Subject Alternative Name" >> $REPORT_FILE
+          echo '```' >> $REPORT_FILE
+        fi
+        
+        echo "## Recommendations" >> $REPORT_FILE
+        
+        CERT_STATUS="${{ needs.check-certificates.outputs.cert-status }}"
+        case $CERT_STATUS in
+          "healthy")
+            echo "✅ All certificates are healthy and valid." >> $REPORT_FILE
+            ;;
+          "expiring")
+            echo "⚠️  Certificates are expiring soon. Renewal recommended." >> $REPORT_FILE
+            ;;
+          "not-ready")
+            echo "❌ Certificates are not ready. Check cert-manager and certificate resources." >> $REPORT_FILE
+            ;;
+          "missing")
+            echo "❌ Certificates are missing. Deploy certificate infrastructure." >> $REPORT_FILE
+            ;;
+          *)
+            echo "❓ Unknown certificate status. Manual investigation required." >> $REPORT_FILE
+            ;;
+        esac
+        
+        echo "📊 Certificate report generated: $REPORT_FILE"
+        cat $REPORT_FILE
+        
+    - name: Upload report artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: certificate-report
+        path: certificate-report-*.md
+        retention-days: 30
+
+  notify-status:
+    name: Notify Certificate Status
+    runs-on: ubuntu-latest
+    needs: [check-certificates, renew-certificates, generate-report]
+    if: always()
+    
+    steps:
+    - name: Success notification
+      if: needs.check-certificates.outputs.cert-status == 'healthy'
+      run: |
+        echo "✅ Certificate monitoring completed successfully"
+        echo "🔐 All certificates are healthy"
+        echo "📊 Report generated and uploaded"
+        
+    - name: Warning notification
+      if: needs.check-certificates.outputs.cert-status == 'expiring'
+      run: |
+        echo "⚠️  Certificate expiration warning"
+        echo "🔄 Automatic renewal ${{ needs.renew-certificates.result == 'success' && 'completed' || 'may be required' }}"
+        echo "📊 Check certificate report for details"
+        
+    - name: Error notification
+      if: needs.check-certificates.outputs.cert-status == 'missing' || needs.check-certificates.outputs.cert-status == 'not-ready'
+      run: |
+        echo "❌ Certificate infrastructure issues detected"
+        echo "🔧 Manual intervention required"
+        echo "📋 Check certificate report and troubleshooting guide"
+        exit 1 
