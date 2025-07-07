@@ -21,6 +21,8 @@ spec:
         - /data
         - --console-address
         - :9001
+        - --certs-dir
+        - /etc/minio/certs
         env:
         - name: MINIO_ROOT_USER
           valueFrom:
@@ -43,6 +45,9 @@ spec:
         volumeMounts:
         - name: storage
           mountPath: /data
+        - name: tls-certs
+          mountPath: /etc/minio/certs
+          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -54,15 +59,27 @@ spec:
           httpGet:
             path: /minio/health/live
             port: 9000
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /minio/health/ready
             port: 9000
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 10
       volumes:
       - name: storage
         persistentVolumeClaim:
-          claimName: minio-storage 
+          claimName: minio-storage
+      - name: tls-certs
+        secret:
+          secretName: minio-internal-tls
+          items:
+          - key: tls.crt
+            path: public.crt
+          - key: tls.key
+            path: private.key
+          - key: ca.crt
+            path: CAs/ca.crt 

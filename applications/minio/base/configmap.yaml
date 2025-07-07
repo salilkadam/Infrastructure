@@ -5,4 +5,7 @@ metadata:
   namespace: minio
 data:
   MINIO_CONSOLE_ADDRESS: ":9001"
-  MINIO_API_SELECT_POOL: "on" 
+  MINIO_API_SELECT_POOL: "on"
+  MINIO_OPTS: "--certs-dir /etc/minio/certs"
+  MINIO_PROMETHEUS_URL: "https://localhost:9000"
+  MINIO_BROWSER_REDIRECT_URL: "https://localhost:9001" 

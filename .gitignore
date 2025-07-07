@@ -49,4 +49,10 @@ __pycache__/
 charts/
 
 # ArgoCD generated files
-argocd-generated/ 
+argocd-generated/
+
+# Certificate files (extracted from cluster)
+*.crt
+*.pem
+*.key
+minio-client-examples.md 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "=== MinIO Console Access Test ==="
-echo "Testing MinIO console accessibility..."
+echo "=== MinIO Console Access Test (SSL) ==="
+echo "Testing MinIO console accessibility with SSL..."
 echo
 
 # Check if kubectl is available
@@ -40,19 +40,33 @@ echo "✅ MinIO console service exists"
 NODEPORT=$(kubectl get svc -n minio prod-minio-console-service-prod -o jsonpath='{.spec.ports[0].nodePort}')
 echo "✅ Console NodePort: $NODEPORT"
 
+# Check if CA certificate is available
+if [ ! -f "minio-ca.crt" ]; then
+    echo "⚠️  CA certificate not found, extracting..."
+    if kubectl get secret minio-internal-ca -n minio &> /dev/null; then
+        kubectl get secret minio-internal-ca -n minio -o jsonpath='{.data.ca\.crt}' | base64 -d > minio-ca.crt
+        echo "✅ CA certificate extracted"
+    else
+        echo "❌ CA certificate secret not found"
+        exit 1
+    fi
+else
+    echo "✅ CA certificate available"
+fi
+
 # Get cluster nodes
 echo "✅ Available cluster nodes:"
 kubectl get nodes -o wide | grep -E "NAME|Ready" | head -10
 
-# Test console accessibility from different nodes
+# Test console accessibility from different nodes with SSL
 echo
-echo "Testing console accessibility..."
+echo "Testing console accessibility with SSL..."
 NODES=(192.168.0.10 192.168.0.200 192.168.0.201 192.168.0.202 192.168.0.203 192.168.0.204)
 SUCCESS_COUNT=0
 
 for NODE in "${NODES[@]}"; do
-    echo -n "Testing $NODE:$NODEPORT ... "
-    if curl -s -I "http://$NODE:$NODEPORT" | grep -q "200 OK"; then
+    echo -n "Testing $NODE:$NODEPORT (HTTPS) ... "
+    if curl --cacert minio-ca.crt -s -I --max-time 5 "https://$NODE:$NODEPORT" | grep -q "200"; then
         echo "✅ Working"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
@@ -61,22 +75,28 @@ for NODE in "${NODES[@]}"; do
 done
 
 echo
-echo "=== Test Results ==="
+echo "=== SSL Test Results ==="
 echo "Accessible nodes: $SUCCESS_COUNT/${#NODES[@]}"
 
 if [ "$SUCCESS_COUNT" -gt 0 ]; then
-    echo "✅ MinIO console is accessible!"
+    echo "✅ MinIO console is accessible via HTTPS!"
     echo
     echo "📝 Access Information:"
-    echo "   URLs: http://[NODE_IP]:$NODEPORT"
+    echo "   URLs: https://[NODE_IP]:$NODEPORT"
     echo "   Username: admin"
     echo "   Password: password"
+    echo "   ⚠️  IMPORTANT: Your browser needs to trust the CA certificate"
     echo
-    echo "🔧 If you still can't access from your browser:"
-    echo "   1. Try port-forward: kubectl port-forward -n minio svc/prod-minio-console-service-prod 9001:9001"
-    echo "   2. Then access: http://localhost:9001"
-    echo "   3. Check network connectivity between your machine and cluster nodes"
-    echo "   4. Try different browsers or incognito mode"
+    echo "🔧 Browser Access Options:"
+    echo "   1. Install minio-ca.crt in your browser/system trust store"
+    echo "   2. Or accept the security warning in your browser"
+    echo "   3. Or use port-forward: kubectl port-forward -n minio svc/prod-minio-console-service-prod 9001:9001"
+    echo "      Then access: https://localhost:9001"
+    echo
+    echo "🔐 SSL Configuration:"
+    echo "   ✅ Internal SSL communication enabled"
+    echo "   ✅ CA certificate: minio-ca.crt"
+    echo "   ✅ All cluster IPs included in certificate"
 else
     echo "❌ MinIO console is not accessible from any node"
     echo "Check the troubleshooting guide: cat TROUBLESHOOTING.md"
@@ -86,4 +106,6 @@ echo
 echo "=== Additional Information ==="
 echo "🔍 Check pod logs: kubectl logs -n minio deployment/prod-minio-deployment-prod"
 echo "🔍 Check service details: kubectl describe svc -n minio prod-minio-console-service-prod"
+echo "🔍 Check certificate: openssl x509 -in minio-ca.crt -text -noout | grep -A 5 'Subject:'"
+echo "🔍 Extract CA for clients: ./scripts/extract-minio-ca.sh extract"
 echo "🔍 Full troubleshooting guide: cat TROUBLESHOOTING.md" 

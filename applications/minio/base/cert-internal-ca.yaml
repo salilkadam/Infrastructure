@@ -1,0 +1,24 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: minio-internal-ca
+  namespace: minio
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: certificates
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  secretName: minio-internal-ca
+  commonName: minio-internal-ca
+  isCA: true
+  duration: 87600h # 10 years
+  renewBefore: 360h # 15 days
+  subject:
+    organizationalUnits:
+    - MinIO Internal CA
+    organizations:
+    - MinIO
+  issuerRef:
+    name: minio-selfsigned-clusterissuer
+    kind: ClusterIssuer
+    group: cert-manager.io 

@@ -10,6 +10,11 @@ resources:
   - service-console.yaml
   - deployment.yaml
   - ingress.yaml
+  # Certificate Infrastructure
+  - cert-clusterissuer-selfsigned.yaml
+  - cert-internal-ca.yaml
+  - cert-ca-issuer.yaml
+  - cert-minio-tls.yaml
 
 commonLabels:
   app.kubernetes.io/name: minio

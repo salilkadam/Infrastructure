@@ -40,6 +40,12 @@ patches:
     - op: replace
       path: /metadata/annotations/cert-manager.io~1cluster-issuer
       value: "letsencrypt-prod"
+    - op: add
+      path: /metadata/annotations/nginx.ingress.kubernetes.io~1backend-protocol
+      value: "HTTPS"
+    - op: add
+      path: /metadata/annotations/nginx.ingress.kubernetes.io~1proxy-ssl-verify
+      value: "off"
     - op: replace
       path: /spec/rules/0/host
       value: minio.askcollections.com
