@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/salilkadam/k8s-infrastructure.git
+    repoURL: https://github.com/salilkadam/Infrastructure.git
     targetRevision: HEAD
     path: applications/minio/overlays/prod
   destination:
