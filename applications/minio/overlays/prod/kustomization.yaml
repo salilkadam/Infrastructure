@@ -61,5 +61,13 @@ patches:
       path: /spec/issuerRef/name
       value: "prod-minio-selfsigned-clusterissuer-prod"
 
+- target:
+    kind: Certificate
+    name: minio-internal-tls
+  patch: |-
+    - op: replace
+      path: /spec/issuerRef/name
+      value: "prod-minio-internal-ca-issuer-prod"
+
 namePrefix: prod-
 nameSuffix: -prod 
