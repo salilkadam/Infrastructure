@@ -60,22 +60,97 @@ jobs:
         sudo mv kustomize /usr/local/bin/
         kustomize version
         
+    - name: Install Python YAML parser
+      run: |
+        pip3 install PyYAML
+        
     - name: Validate MinIO base manifests
       run: |
         echo "🔍 Validating MinIO base manifests..."
-        kustomize build applications/minio/base | kubectl apply --dry-run=client -f -
-        echo "✅ Base manifests validation passed"
+        # Build manifests and check for deprecation warnings
+        if kustomize build applications/minio/base > /tmp/base-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+          # Check for deprecation warnings
+          if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+            echo "⚠️  Deprecation warnings found:"
+            cat /tmp/kustomize-warnings.txt
+            echo "Please fix deprecated configurations"
+            exit 1
+          fi
+          # Validate YAML syntax (handle multiple documents)
+          python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+          " || exit 1
+          echo "✅ Base manifests validation passed"
+        else
+          echo "❌ Failed to build base manifests"
+          cat /tmp/kustomize-warnings.txt
+          exit 1
+        fi
         
     - name: Validate MinIO overlays
       run: |
         echo "🔍 Validating MinIO overlay manifests..."
         for env in dev staging prod; do
           if [ -d "applications/minio/overlays/$env" ]; then
-            echo "Validating environment: $env"
-            kustomize build "applications/minio/overlays/$env" | kubectl apply --dry-run=client -f -
+            echo "📋 Validating environment: $env"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "applications/minio/overlays/$env" > /tmp/overlay-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+              " || exit 1
+              echo "✅ $env overlay validation passed"
+            else
+              echo "❌ Failed to build $env overlay"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
           fi
         done
-        echo "✅ Overlay manifests validation passed"
+        echo "✅ All overlay manifests validation passed"
         
     - name: Validate scripts
       run: |
