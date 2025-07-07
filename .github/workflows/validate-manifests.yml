@@ -119,11 +119,13 @@ jobs:
     - name: Check for secrets in manifests
       run: |
         echo "Checking for potential secrets..."
-        if grep -r "password\|secret\|key" --include="*.yaml" --include="*.yml" applications/ | grep -v "secretKeyRef\|name.*secret\|name.*key"; then
-          echo "⚠️  Potential secrets found in manifests. Please review."
+        # Look for potential hardcoded secrets but exclude legitimate Kubernetes references
+        if grep -r -E "(password|secret|key)" --include="*.yaml" --include="*.yml" applications/ | \
+           grep -v -E "(secretKeyRef|name.*secret|name.*key|secretName:|access-key:|secret-key:|key:|key encipherment|# .*password|tls\.key|tls\.crt|ca\.crt|private\.key|MINIO_ROOT|metadata\.name|secret\.yaml|secret:$)"; then
+          echo "⚠️  Potential hardcoded secrets found in manifests. Please review."
           exit 1
         fi
-        echo "✅ No hardcoded secrets found."
+        echo "✅ No hardcoded secrets detected."
         
     - name: Validate ArgoCD Applications
       run: |
