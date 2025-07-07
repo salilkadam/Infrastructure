@@ -78,26 +78,24 @@ jobs:
           fi
           # Validate YAML syntax (handle multiple documents)
           python3 -c "
-import yaml
-import sys
-try:
-    docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
-    resource_count = len([d for d in docs if d is not None])
-    print(f'📊 Generated {resource_count} Kubernetes resources')
-    # Basic validation - check for required fields
-    for doc in docs:
-        if doc and 'apiVersion' in doc and 'kind' in doc:
-            continue
-        elif doc is None:
-            continue
-        else:
-            print(f'❌ Invalid resource: missing apiVersion or kind')
-            sys.exit(1)
-    print('✅ All resources have required fields')
-except Exception as e:
-    print(f'❌ YAML validation failed: {e}')
-    sys.exit(1)
-          " || exit 1
+        import yaml
+        import sys
+        try:
+            docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
+            resource_count = len([d for d in docs if d is not None])
+            print(f'📊 Generated {resource_count} Kubernetes resources')
+            for doc in docs:
+                if doc and 'apiVersion' in doc and 'kind' in doc:
+                    continue
+                elif doc is None:
+                    continue
+                else:
+                    print(f'❌ Invalid resource: missing apiVersion or kind')
+                    sys.exit(1)
+            print('✅ All resources have required fields')
+        except Exception as e:
+            print(f'❌ YAML validation failed: {e}')
+            sys.exit(1)" || exit 1
           echo "✅ Base manifests validation passed"
         else
           echo "❌ Failed to build base manifests"
@@ -122,26 +120,24 @@ except Exception as e:
               fi
               # Validate YAML syntax (handle multiple documents)
               python3 -c "
-import yaml
-import sys
-try:
-    docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
-    resource_count = len([d for d in docs if d is not None])
-    print(f'📊 Generated {resource_count} Kubernetes resources')
-    # Basic validation - check for required fields
-    for doc in docs:
-        if doc and 'apiVersion' in doc and 'kind' in doc:
-            continue
-        elif doc is None:
-            continue
-        else:
-            print(f'❌ Invalid resource: missing apiVersion or kind')
-            sys.exit(1)
-    print('✅ All resources have required fields')
-except Exception as e:
-    print(f'❌ YAML validation failed: {e}')
-    sys.exit(1)
-              " || exit 1
+        import yaml
+        import sys
+        try:
+            docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
+            resource_count = len([d for d in docs if d is not None])
+            print(f'📊 Generated {resource_count} Kubernetes resources')
+            for doc in docs:
+                if doc and 'apiVersion' in doc and 'kind' in doc:
+                    continue
+                elif doc is None:
+                    continue
+                else:
+                    print(f'❌ Invalid resource: missing apiVersion or kind')
+                    sys.exit(1)
+            print('✅ All resources have required fields')
+        except Exception as e:
+            print(f'❌ YAML validation failed: {e}')
+            sys.exit(1)" || exit 1
               echo "✅ $env overlay validation passed"
             else
               echo "❌ Failed to build $env overlay"
@@ -323,19 +319,17 @@ except Exception as e:
     if: always()
     
     steps:
-    - name: Deployment Success
-      if: needs.deploy-minio.result == 'success' && needs.test-ssl.result == 'success'
+    - name: Success notification
+      if: needs.deploy-certificates.result == 'success' && needs.deploy-minio.result == 'success' && needs.test-ssl.result == 'success'
       run: |
-        echo "✅ MinIO deployment successful!"
-        echo "🔐 SSL/TLS configuration verified"
-        echo "🌐 Console accessible via HTTPS"
+        echo "✅ MinIO deployment completed successfully"
+        echo "🔐 SSL certificates deployed and verified"
+        echo "🚀 MinIO application running with SSL"
         
-    - name: Deployment Failure
-      if: needs.deploy-minio.result == 'failure' || needs.test-ssl.result == 'failure'
+    - name: Failure notification
+      if: needs.deploy-certificates.result == 'failure' || needs.deploy-minio.result == 'failure' || needs.test-ssl.result == 'failure'
       run: |
-        echo "❌ MinIO deployment failed!"
-        echo "Please check the logs and troubleshoot using:"
-        echo "  - kubectl logs -n minio deployment/prod-minio-deployment-prod"
-        echo "  - kubectl describe pods -n minio"
-        echo "  - ./scripts/extract-minio-ca.sh test"
-        exit 1 
+        echo "❌ MinIO deployment failed"
+        echo "📋 Check the logs for details"
+        echo "🔧 Manual intervention may be required"
+        exit 1
