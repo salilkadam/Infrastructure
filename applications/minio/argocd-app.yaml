@@ -1,16 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: minio
+  name: minio-ssl-production
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/salilkadam/infrastructure-k8s
+    repoURL: https://github.com/salilkadam/k8s-infrastructure.git
     targetRevision: HEAD
-    path: applications/minio/base
+    path: applications/minio/overlays/prod
   destination:
     server: https://kubernetes.default.svc
     namespace: minio
