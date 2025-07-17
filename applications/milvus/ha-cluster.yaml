@@ -131,7 +131,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -182,7 +182,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -233,7 +233,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -285,7 +285,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -336,7 +336,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -388,7 +388,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -439,7 +439,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:
@@ -491,7 +491,7 @@ spec:
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
-          subPath: 00_milvus_default.yaml
+          subPath: milvus.yaml
       volumes:
       - name: milvus-config
         configMap:

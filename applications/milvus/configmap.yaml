@@ -4,7 +4,7 @@ metadata:
   name: milvus
   namespace: milvus
 data:
-  00_milvus_default.yaml: |
+  milvus.yaml: |
     # etcd configuration
     etcd:
       endpoints:
