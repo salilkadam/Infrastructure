@@ -3,10 +3,6 @@ kind: Issuer
 metadata:
   name: minio-internal-ca-issuer
   namespace: minio
-  labels:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/component: certificates
-    app.kubernetes.io/part-of: infrastructure
 spec:
   ca:
     secretName: minio-internal-ca 

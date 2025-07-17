@@ -13,17 +13,17 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - minio.askcollections.com
-    secretName: minio-tls
+    - hosts:
+        - minio.askcollections.com
+      secretName: minio-tls
   rules:
-  - host: minio.askcollections.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: minio-api
-            port:
-              number: 9000 
+    - host: minio.askcollections.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio-api
+                port:
+                  number: 9000 

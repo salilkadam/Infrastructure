@@ -3,16 +3,12 @@ kind: Service
 metadata:
   name: minio-api
   namespace: minio
-  labels:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/component: api
 spec:
   type: ClusterIP
   ports:
-  - name: api
-    port: 9000
-    targetPort: 9000
-    protocol: TCP
+    - name: api
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
   selector:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/component: server 
+    app.kubernetes.io/name: minio 

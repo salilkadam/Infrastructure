@@ -3,44 +3,33 @@ kind: Certificate
 metadata:
   name: minio-internal-tls
   namespace: minio
-  labels:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/component: certificates
-    app.kubernetes.io/part-of: infrastructure
 spec:
-  secretName: minio-internal-tls
   commonName: minio-hl.minio.svc.cluster.local
-  duration: 2160h # 90 days
-  renewBefore: 360h # 15 days
-  subject:
-    organizationalUnits:
-    - MinIO Internal TLS
-    organizations:
-    - MinIO
   dnsNames:
-  - minio-hl.minio.svc.cluster.local
-  - minio.minio.svc.cluster.local
-  - minio-service.minio.svc.cluster.local
-  - prod-minio-service-prod.minio.svc.cluster.local
-  - prod-minio-console-service-prod.minio.svc.cluster.local
-  - minio
-  - localhost
-  - "*.minio.svc.cluster.local"
+    - minio-hl.minio.svc.cluster.local
+    - minio.minio.svc.cluster.local
+    - minio-api.minio.svc.cluster.local
+    - minio-console.minio.svc.cluster.local
+    - minio
+    - localhost
+    - '*.minio.svc.cluster.local'
+  duration: 2160h
   ipAddresses:
-  - 127.0.0.1
-  - "::1"
-  - "192.168.0.200"
-  - "192.168.0.201"
-  - "192.168.0.202"
-  - "192.168.0.203"
-  - "192.168.0.204"
-  - "192.168.0.10"
-  usages:
-  - digital signature
-  - key encipherment
-  - server auth
-  - client auth
+    - 127.0.0.1
+    - ::1
   issuerRef:
     name: minio-internal-ca-issuer
     kind: Issuer
-    group: cert-manager.io 
+    group: cert-manager.io
+  renewBefore: 360h
+  secretName: minio-internal-tls
+  subject:
+    organizations:
+      - MinIO
+    organizationalUnits:
+      - MinIO Internal TLS
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+    - client auth 
