@@ -110,7 +110,7 @@ spec:
       - name: milvus-proxy
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "proxy"]
+        args: ["run", "proxy", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         - containerPort: 19121
@@ -162,7 +162,7 @@ spec:
       - name: milvus-root-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "rootcoord"]
+        args: ["run", "rootcoord", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -213,7 +213,7 @@ spec:
       - name: milvus-data-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "datacoord"]
+        args: ["run", "datacoord", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -265,7 +265,7 @@ spec:
       - name: milvus-data-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "datanode"]
+        args: ["run", "datanode", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -316,7 +316,7 @@ spec:
       - name: milvus-query-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "querycoord"]
+        args: ["run", "querycoord", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -368,7 +368,7 @@ spec:
       - name: milvus-query-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "querynode"]
+        args: ["run", "querynode", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -419,7 +419,7 @@ spec:
       - name: milvus-index-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "indexcoord"]
+        args: ["run", "indexcoord", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
@@ -471,7 +471,7 @@ spec:
       - name: milvus-index-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "indexnode"]
+        args: ["run", "indexnode", "-c", "/etc/milvus/configs/milvus.yaml"]
         ports:
         - containerPort: 19530
         env:
