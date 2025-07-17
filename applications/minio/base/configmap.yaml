@@ -4,8 +4,6 @@ metadata:
   name: minio-config
   namespace: minio
 data:
-  MINIO_CONSOLE_ADDRESS: ":9001"
-  MINIO_API_SELECT_POOL: "on"
-  MINIO_OPTS: "--certs-dir /etc/minio/certs"
-  MINIO_PROMETHEUS_URL: "https://localhost:9000"
-  MINIO_BROWSER_REDIRECT_URL: "https://localhost:9001" 
+  MINIO_DOMAIN: minio.askcollections.com
+  MINIO_BROWSER_REDIRECT_URL: https://minio.askcollections.com
+  MINIO_SERVER_URL: https://minio.askcollections.com 

@@ -2,24 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - namespace.yaml
-  - secret.yaml
-  - configmap.yaml
-  - pvc.yaml
-  - service.yaml
-  - service-console.yaml
-  - deployment.yaml
-  - ingress.yaml
-  # Certificate Infrastructure
-  - cert-clusterissuer-selfsigned.yaml
-  - cert-internal-ca.yaml
-  - cert-ca-issuer.yaml
-  - cert-minio-tls.yaml
+- namespace.yaml
+- secret.yaml
+- configmap.yaml
+- statefulset.yaml
+- service-hl.yaml
+- service.yaml
+- service-console.yaml
+- ingress.yaml
+- cert-clusterissuer-selfsigned.yaml
+- cert-ca-issuer.yaml
+- cert-internal-ca.yaml
+- cert-minio-tls.yaml
 
-labels:
-  - pairs:
-      app.kubernetes.io/name: minio
-      app.kubernetes.io/component: object-storage
-      app.kubernetes.io/part-of: infrastructure
-
-namespace: minio 
+commonLabels:
+  app.kubernetes.io/name: minio
+  app.kubernetes.io/part-of: storage 

@@ -1,0 +1,138 @@
+name: Validate Kubernetes Manifests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  validate-manifests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+        
+    - name: Set up Kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+        
+    - name: Install Python YAML parser
+      run: |
+        pip3 install PyYAML
+        
+    - name: Validate base manifests
+      run: |
+        echo "🔍 Validating MinIO base manifests..."
+        for app in applications/*/base; do
+          if [ -f "$app/kustomization.yaml" ]; then
+            echo "📋 Building and validating $app"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "$app" > /tmp/base-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)" || exit 1
+              echo "✅ $app validation passed"
+            else
+              echo "❌ Failed to build $app"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
+          fi
+        done
+        
+    - name: Validate overlays
+      run: |
+        echo "🔍 Validating MinIO overlay manifests..."
+        for overlay in applications/*/overlays/*; do
+          if [ -f "$overlay/kustomization.yaml" ]; then
+            echo "📋 Building and validating $overlay"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "$overlay" > /tmp/overlay-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+    docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
+    resource_count = len([d for d in docs if d is not None])
+    print(f'📊 Generated {resource_count} Kubernetes resources')
+    for doc in docs:
+        if doc and 'apiVersion' in doc and 'kind' in doc:
+            continue
+        elif doc is None:
+            continue
+        else:
+            print(f'❌ Invalid resource: missing apiVersion or kind')
+            sys.exit(1)
+    print('✅ All resources have required fields')
+except Exception as e:
+    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)" || exit 1
+              echo "✅ $overlay validation passed"
+            else
+              echo "❌ Failed to build $overlay"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
+          fi
+        done
+        
+    - name: Check for secrets in manifests
+      run: |
+        echo "Checking for potential secrets..."
+        if grep -r "password\|secret\|key" --include="*.yaml" --include="*.yml" applications/ | grep -v "secretKeyRef\|name.*secret\|name.*key"; then
+          echo "⚠️  Potential secrets found in manifests. Please review."
+          exit 1
+        fi
+        echo "✅ No hardcoded secrets found."
+        
+    - name: Validate ArgoCD Applications
+      run: |
+        echo "🔍 Validating ArgoCD applications..."
+        for app in applications/*/argocd-app.yaml; do
+          if [ -f "$app" ]; then
+            echo "📋 Validating $app"
+            # Validate YAML syntax only (no cluster connection required)
+            python3 -c "import yaml; list(yaml.safe_load_all(open('$app')))" || exit 1
+            echo "✅ $app validation passed"
+          fi
+        done 

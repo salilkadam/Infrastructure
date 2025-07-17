@@ -6,46 +6,38 @@ resources:
 
 patches:
 - target:
-    kind: PersistentVolumeClaim
-    name: prod-minio-storage-prod
-  patch: |-
-    - op: replace
-      path: /spec/resources/requests/storage
-      value: 200Gi
-
-- target:
-    kind: Deployment
-    name: prod-minio-deployment-prod
+    kind: StatefulSet
+    name: minio
   patch: |-
     - op: replace
       path: /spec/replicas
-      value: 2
+      value: 4
+    - op: replace
+      path: /spec/serviceName
+      value: "prod-minio-hl-prod"
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
-      value: "512Mi"
-    - op: replace
-      path: /spec/template/spec/containers/0/resources/requests/cpu
-      value: "500m"
-    - op: replace
-      path: /spec/template/spec/containers/0/resources/limits/memory
       value: "1Gi"
     - op: replace
-      path: /spec/template/spec/containers/0/resources/limits/cpu
+      path: /spec/template/spec/containers/0/resources/requests/cpu
       value: "1000m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "2Gi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "2000m"
+    - op: replace
+      path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+      value: 100Gi
 
 - target:
     kind: Ingress
-    name: prod-minio-ingress-prod
+    name: minio-ingress
   patch: |-
     - op: replace
       path: /metadata/annotations/cert-manager.io~1cluster-issuer
       value: "letsencrypt-prod"
-    - op: add
-      path: /metadata/annotations/nginx.ingress.kubernetes.io~1backend-protocol
-      value: "HTTPS"
-    - op: add
-      path: /metadata/annotations/nginx.ingress.kubernetes.io~1proxy-ssl-verify
-      value: "off"
     - op: replace
       path: /spec/rules/0/host
       value: minio.askcollections.com
@@ -55,7 +47,7 @@ patches:
 
 - target:
     kind: Certificate
-    name: prod-minio-internal-ca-prod
+    name: minio-internal-ca
   patch: |-
     - op: replace
       path: /spec/issuerRef/name
@@ -63,7 +55,7 @@ patches:
 
 - target:
     kind: Certificate
-    name: prod-minio-internal-tls-prod
+    name: minio-internal-tls
   patch: |-
     - op: replace
       path: /spec/issuerRef/name

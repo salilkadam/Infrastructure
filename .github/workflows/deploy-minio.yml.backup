@@ -1,0 +1,341 @@
+name: Deploy MinIO with SSL Infrastructure
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'applications/minio/**'
+      - 'scripts/deploy-minio-certificates.sh'
+      - 'scripts/extract-minio-ca.sh'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'prod'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      force_cert_renewal:
+        description: 'Force certificate renewal'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  KUBECTL_VERSION: v1.28.0
+  KUSTOMIZE_VERSION: v5.1.1
+
+jobs:
+  validate:
+    name: Validate Manifests
+    runs-on: ubuntu-latest
+    outputs:
+      changes-detected: ${{ steps.changes.outputs.minio }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Detect changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          minio:
+            - 'applications/minio/**'
+            - 'scripts/deploy-minio-certificates.sh'
+            - 'scripts/extract-minio-ca.sh'
+    
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ env.KUBECTL_VERSION }}
+        
+    - name: Set up Kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+        kustomize version
+        
+    - name: Install Python YAML parser
+      run: |
+        pip3 install PyYAML
+        
+    - name: Validate MinIO base manifests
+      run: |
+        echo "🔍 Validating MinIO base manifests..."
+        # Build manifests and check for deprecation warnings
+        if kustomize build applications/minio/base > /tmp/base-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+          # Check for deprecation warnings
+          if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+            echo "⚠️  Deprecation warnings found:"
+            cat /tmp/kustomize-warnings.txt
+            echo "Please fix deprecated configurations"
+            exit 1
+          fi
+          # Validate YAML syntax (handle multiple documents)
+          python3 -c "
+import yaml
+import sys
+try:
+            docs = list(yaml.safe_load_all(open('/tmp/base-manifests.yaml')))
+            resource_count = len([d for d in docs if d is not None])
+                    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+            for doc in docs:
+                if doc and 'apiVersion' in doc and 'kind' in doc:
+                    continue
+                elif doc is None:
+                    continue
+                else:
+                    print(f'❌ Invalid resource: missing apiVersion or kind')
+                    sys.exit(1)
+                    print('✅ All resources have required fields')
+except Exception as e:
+                    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+          " || exit 1
+          echo "✅ Base manifests validation passed"
+        else
+          echo "❌ Failed to build base manifests"
+          cat /tmp/kustomize-warnings.txt
+          exit 1
+        fi
+        
+    - name: Validate MinIO overlays
+      run: |
+        echo "🔍 Validating MinIO overlay manifests..."
+        for env in dev staging prod; do
+          if [ -d "applications/minio/overlays/$env" ]; then
+            echo "📋 Validating environment: $env"
+            # Build manifests and check for deprecation warnings
+            if kustomize build "applications/minio/overlays/$env" > /tmp/overlay-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
+              # Check for deprecation warnings
+              if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
+                echo "⚠️  Deprecation warnings found:"
+                cat /tmp/kustomize-warnings.txt
+                echo "Please fix deprecated configurations"
+                exit 1
+              fi
+              # Validate YAML syntax (handle multiple documents)
+              python3 -c "
+import yaml
+import sys
+try:
+            docs = list(yaml.safe_load_all(open('/tmp/overlay-manifests.yaml')))
+            resource_count = len([d for d in docs if d is not None])
+                    print(f'📊 Generated {resource_count} Kubernetes resources')
+    # Basic validation - check for required fields
+            for doc in docs:
+                if doc and 'apiVersion' in doc and 'kind' in doc:
+                    continue
+                elif doc is None:
+                    continue
+                else:
+                    print(f'❌ Invalid resource: missing apiVersion or kind')
+                    sys.exit(1)
+                    print('✅ All resources have required fields')
+except Exception as e:
+                    print(f'❌ YAML validation failed: {e}')
+    sys.exit(1)
+              " || exit 1
+              echo "✅ $env overlay validation passed"
+            else
+              echo "❌ Failed to build $env overlay"
+              cat /tmp/kustomize-warnings.txt
+              exit 1
+            fi
+          fi
+        done
+        echo "✅ All overlay manifests validation passed"
+        
+    - name: Validate scripts
+      run: |
+        echo "🔍 Validating deployment scripts..."
+        bash -n scripts/deploy-minio-certificates.sh
+        bash -n scripts/extract-minio-ca.sh
+        echo "✅ Script validation passed"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.changes-detected == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy security scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'config'
+        scan-ref: 'applications/minio'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+    - name: Check for hardcoded secrets
+      run: |
+        echo "🔍 Scanning for potential secrets..."
+        if grep -r -E "(password|secret|key|token)" --include="*.yaml" --include="*.yml" applications/minio/ | grep -v -E "(secretKeyRef|name.*secret|name.*key|MINIO_ROOT|metadata.name)"; then
+          echo "❌ Potential secrets found in manifests"
+          exit 1
+        fi
+        echo "✅ No hardcoded secrets detected"
+
+  deploy-certificates:
+    name: Deploy Certificate Infrastructure
+    runs-on: ubuntu-latest
+    needs: [validate, security-scan]
+    if: needs.validate.outputs.changes-detected == 'true' || github.event.inputs.force_cert_renewal == 'true'
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        kubectl version --client
+        
+    - name: Verify cluster connectivity
+      run: |
+        echo "🔍 Verifying cluster connectivity..."
+        kubectl cluster-info
+        kubectl get nodes
+        
+    - name: Check cert-manager
+      run: |
+        echo "🔍 Checking cert-manager installation..."
+        if ! kubectl get namespace cert-manager; then
+          echo "❌ cert-manager not found. Installing..."
+          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
+          kubectl wait --for=condition=ready pod -l app=cert-manager -n cert-manager --timeout=300s
+        else
+          echo "✅ cert-manager is installed"
+        fi
+        
+    - name: Deploy certificate infrastructure
+      run: |
+        echo "🚀 Deploying certificate infrastructure..."
+        chmod +x scripts/deploy-minio-certificates.sh
+        ./scripts/deploy-minio-certificates.sh deploy
+        
+    - name: Verify certificates
+      run: |
+        echo "🔍 Verifying certificate deployment..."
+        ./scripts/deploy-minio-certificates.sh verify
+
+  deploy-minio:
+    name: Deploy MinIO Application
+    runs-on: ubuntu-latest
+    needs: [deploy-certificates]
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        
+    - name: Set up Kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+        
+    - name: Deploy MinIO
+      env:
+        ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
+      run: |
+        echo "🚀 Deploying MinIO to $ENVIRONMENT environment..."
+        kustomize build "applications/minio/overlays/$ENVIRONMENT" | kubectl apply -f -
+        
+    - name: Wait for deployment
+      run: |
+        echo "⏳ Waiting for MinIO deployment to be ready..."
+        kubectl rollout status deployment/prod-minio-deployment-prod -n minio --timeout=300s
+        
+    - name: Verify deployment
+      run: |
+        echo "🔍 Verifying MinIO deployment..."
+        kubectl get pods -n minio -l app.kubernetes.io/name=minio
+        kubectl get svc -n minio
+        kubectl get ingress -n minio
+
+  test-ssl:
+    name: Test SSL Configuration
+    runs-on: ubuntu-latest
+    needs: [deploy-minio]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      env:
+        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      run: |
+        mkdir -p ~/.kube
+        echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        
+    - name: Extract CA certificate
+      run: |
+        echo "🔍 Extracting CA certificate for testing..."
+        chmod +x scripts/extract-minio-ca.sh
+        ./scripts/extract-minio-ca.sh extract
+        
+    - name: Test SSL endpoints
+      run: |
+        echo "🔍 Testing SSL endpoints..."
+        ./scripts/extract-minio-ca.sh test
+        
+    - name: Run MinIO console test
+      run: |
+        echo "🔍 Running MinIO console SSL test..."
+        chmod +x test-minio-console.sh
+        ./test-minio-console.sh
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-certificates, deploy-minio, test-ssl]
+    if: always()
+    
+    steps:
+    - name: Deployment Success
+      if: needs.deploy-minio.result == 'success' && needs.test-ssl.result == 'success'
+      run: |
+        echo "✅ MinIO deployment successful!"
+        echo "🔐 SSL/TLS configuration verified"
+        echo "🌐 Console accessible via HTTPS"
+        
+    - name: Deployment Failure
+      if: needs.deploy-minio.result == 'failure' || needs.test-ssl.result == 'failure'
+      run: |
+        echo "❌ MinIO deployment failed!"
+        echo "Please check the logs and troubleshoot using:"
+        echo "  - kubectl logs -n minio deployment/prod-minio-deployment-prod"
+        echo "  - kubectl describe pods -n minio"
+        echo "  - ./scripts/extract-minio-ca.sh test"
+        exit 1 

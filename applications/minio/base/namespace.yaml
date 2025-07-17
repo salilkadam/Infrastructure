@@ -4,5 +4,4 @@ metadata:
   name: minio
   labels:
     app.kubernetes.io/name: minio
-    app.kubernetes.io/component: object-storage
-    app.kubernetes.io/part-of: infrastructure 
+    app.kubernetes.io/part-of: storage 

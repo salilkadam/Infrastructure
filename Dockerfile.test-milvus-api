@@ -1,0 +1,6 @@
+FROM python:3.10-slim
+
+RUN pip install pymilvus
+COPY test-milvus-api.py /test-milvus-api.py
+
+ENTRYPOINT ["python", "/test-milvus-api.py"] 
