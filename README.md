@@ -1,4 +1,4 @@
-# Infrastructure K8s - ArgoCD Applications
+# Infrastructure Repository
 
 This repository contains Kubernetes manifests and ArgoCD applications for deploying infrastructure components on a K3s cluster using GitOps principles.
 
@@ -10,199 +10,242 @@ This repository contains Kubernetes manifests and ArgoCD applications for deploy
 │   └── minio/             # MinIO object storage
 │       ├── base/          # Base Kubernetes manifests
 │       ├── overlays/      # Environment-specific overlays
-│       │   ├── dev/       # Development environment
-│       │   ├── staging/   # Staging environment
-│       │   └── prod/      # Production environment
 │       └── argocd-app.yaml # ArgoCD Application manifest
+├── docs/                  # Comprehensive documentation
+│   ├── README.md         # Documentation index
+│   └── minio/            # MinIO documentation
+│       ├── README.md     # Main MinIO documentation
+│       ├── SSL_CONFIGURATION.md  # SSL setup and configuration
+│       └── DEPLOYMENT_GUIDE.md   # Deployment and troubleshooting
+├── infrastructure/        # Base infrastructure components
+│   └── base/             # NFS, MetalLB, and other base components
 ├── environments/          # Environment-specific configurations
 │   ├── dev/
 │   ├── staging/
 │   └── prod/
+├── scripts/               # Utility scripts and tools
 ├── projects/              # ArgoCD Project definitions
-└── README.md
+└── README.md             # This file
 ```
 
 ## Prerequisites
 
-- K3s cluster with the following components already configured:
+- **K3s cluster** with the following components:
   - **Storage Class**: `nfs-client` (for persistent storage)
-  - **SSL/TLS**: `letsencrypt-staging` cluster issuer (for SSL certificates)
-  - **Ingress Controller**: NGINX Ingress Controller
-  - **ArgoCD**: Installed and configured
+  - **Cert-Manager**: For SSL certificate management
+  - **NGINX Ingress Controller**: For external access
+  - **ArgoCD**: For GitOps deployment management
 
 ## Applications
 
-### MinIO Object Storage
+### [MinIO Object Storage](./docs/minio/)
 
-MinIO is configured with:
-- **Storage**: Uses `nfs-client` storage class
-- **SSL**: Uses `letsencrypt-staging` for SSL certificates (API only)
-- **Ingress**: Exposes only the API (port 9000) with SSL
-- **Console**: Available internally via NodePort (port 30001) 
-- **High Availability**: Configured for production with multiple replicas
+**Overview**: Production-ready, scalable MinIO object storage deployment
 
-#### Environment-Specific Configurations
+**Features**:
+- ✅ **Scalable Architecture**: 4-replica StatefulSet with 500Gi storage each
+- ✅ **SSL Security**: Self-signed certificates for internal communication
+- ✅ **External Access**: API available at `minio.askcollections.com`
+- ✅ **Internal Console**: Console accessible via NodePort 30901
+- ✅ **ArgoCD Integration**: Automated deployment and management
 
-| Environment | Storage | Replicas | API Hostname | Console Access |
-|-------------|---------|----------|--------------|----------------|
-| Development | 20Gi    | 1        | minio-dev.askcollections.com | NodePort 30001 |
-| Staging     | 50Gi    | 1        | minio-staging.askcollections.com | NodePort 30001 |
-| Production  | 200Gi   | 2        | minio-prod.askcollections.com | NodePort 30001 |
-
-#### Default Credentials
-
-- **Username**: `admin`
-- **Password**: `password`
-
-> **⚠️ Important**: Change these credentials in production environments by updating the secret in the respective overlay.
-
-## Deployment
-
-### Option 1: CI/CD with GitHub Actions (Recommended)
-
-This repository includes comprehensive CI/CD pipelines for automated deployment with SSL certificate management.
-
-#### Quick Setup
-
-1. **Configure GitHub Repository**
-   ```bash
-   # Check prerequisites
-   ./scripts/setup-repository.sh prerequisites
-   
-   # Configure your GitHub repository
-   ./scripts/setup-repository.sh configure-remote https://github.com/USERNAME/k3s-minio-infrastructure.git
-   
-   # Generate secrets for GitHub
-   ./scripts/setup-repository.sh secrets
-   
-   # Push to GitHub
-   ./scripts/setup-repository.sh push
-   ```
-
-2. **Deploy via GitHub Actions**
-   ```bash
-   # Manual deployment trigger
-   gh workflow run deploy-minio.yml -f environment=prod
-   
-   # Check deployment status
-   gh run list
-   ```
-
-3. **Monitor certificates**
-   ```bash
-   # Check certificate status
-   gh workflow run certificate-monitoring.yml -f action=check
-   ```
-
-#### CI/CD Features
-
-- ✅ **Automated SSL Certificate Management** - Self-signed CA with auto-renewal
-- ✅ **Multi-Environment Support** - dev, staging, prod with protection rules
-- ✅ **Security Scanning** - Trivy security scans and secret detection
-- ✅ **SSL Testing** - Automated SSL connectivity verification
-- ✅ **Certificate Monitoring** - Daily certificate health checks
-- ✅ **Deployment Validation** - Manifest validation and dry-run testing
-
-For detailed CI/CD setup instructions, see [`CICD_SETUP.md`](CICD_SETUP.md).
-
-### Option 2: Using ArgoCD
-
-1. Apply the ArgoCD application:
+**Quick Start**:
 ```bash
+# Deploy via ArgoCD
 kubectl apply -f applications/minio/argocd-app.yaml
+
+# Access external API
+curl -I https://minio.askcollections.com
+
+# Access internal console (replace with node IP)
+curl -k https://<cluster-node-ip>:30901
 ```
 
-2. Access ArgoCD UI and sync the application
+**Documentation**: [Complete MinIO Documentation](./docs/minio/)
 
-### Option 3: Manual Deployment
+### etcd (Coming Soon)
 
-For testing or manual deployment:
+**Overview**: Distributed key-value store for Kubernetes
+**Status**: Planning phase
+**Documentation**: Will be added to `docs/etcd/`
+
+## Infrastructure Components
+
+### Base Infrastructure (`infrastructure/base/`)
+
+- **NFS Provisioner**: `00-nfs-rbac.yaml`, `01-nfs-provisioner.yaml`
+- **Storage Classes**: `02-nfs-storage.yaml`
+- **Load Balancer**: `03-metallb.yaml`
+
+### Deployment
 
 ```bash
-# Deploy certificates first
-./scripts/deploy-minio-certificates.sh deploy
+# Deploy base infrastructure
+kubectl apply -f infrastructure/base/
 
-# Deploy to development
+# Verify components
+kubectl get storageclass
+kubectl get pods -n metallb-system
+```
+
+## Environment Management
+
+### Environment Structure
+
+Each application supports multiple environments:
+- **Development**: Lightweight configuration for testing
+- **Staging**: Production-like configuration for validation
+- **Production**: Full production configuration with high availability
+
+### Environment-Specific Deployment
+
+```bash
+# Deploy to specific environment
 kubectl apply -k applications/minio/overlays/dev
-
-# Deploy to staging
 kubectl apply -k applications/minio/overlays/staging
-
-# Deploy to production
 kubectl apply -k applications/minio/overlays/prod
 ```
 
-## Customization
+## GitOps with ArgoCD
 
-### Updating Hostnames
+### ArgoCD Applications
 
-Update the hostnames in the environment-specific overlays:
-- `applications/minio/overlays/{env}/kustomization.yaml`
+Each application has an ArgoCD application manifest that:
+- **Automated Sync**: Automatically deploys changes
+- **Self-Healing**: Corrects drift from desired state
+- **Pruning**: Removes resources not in Git
+- **Health Monitoring**: Tracks application health
 
-### Updating Storage
+### Application Management
 
-Modify the storage size in the PVC patches within the overlay files.
-
-### Updating Credentials
-
-Create new base64 encoded credentials:
 ```bash
-echo -n "your-username" | base64
-echo -n "your-password" | base64
+# List applications
+kubectl get applications -n argocd
+
+# Check application status
+kubectl describe application minio -n argocd
+
+# Force sync
+kubectl patch application minio -n argocd --type='merge' -p='{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
 ```
 
-Update the secret in the base configuration or create an overlay patch.
+## Scripts and Tools
 
-## Monitoring
+### Utility Scripts (`scripts/`)
 
-MinIO includes built-in health checks:
-- **Liveness Probe**: `/minio/health/live`
-- **Readiness Probe**: `/minio/health/ready`
+- **`setup-repository.sh`**: Repository setup and configuration
+- **`test-manifests.sh`**: Manifest validation and testing
+- **`extract-minio-ca.sh`**: MinIO CA certificate extraction
+- **`deploy-minio-certificates.sh`**: Certificate deployment
+- **`test-minio-console.sh`**: Console connectivity testing
 
-## Security Considerations
+### Usage
 
-1. **Credentials**: Update default credentials for production
-2. **SSL**: Switch to `letsencrypt-prod` for production environments
-3. **Network Policies**: Consider implementing network policies for enhanced security
-4. **RBAC**: Implement proper RBAC for MinIO access
+```bash
+# Setup repository
+./scripts/setup-repository.sh prerequisites
+
+# Test manifests
+./scripts/test-manifests.sh
+
+# Extract MinIO CA certificate
+./scripts/extract-minio-ca.sh all
+```
+
+## Documentation
+
+### Documentation Structure
+
+- **`docs/README.md`**: Main documentation index
+- **`docs/<application>/`**: Application-specific documentation
+  - **README.md**: Overview and quick start
+  - **DEPLOYMENT_GUIDE.md**: Complete deployment process
+  - **Application-specific guides**: SSL, security, etc.
+
+### Getting Started
+
+1. **Choose an Application**: Browse applications in `docs/`
+2. **Read the README**: Start with the main README for the application
+3. **Follow Deployment Guide**: Use the deployment guide for step-by-step instructions
+4. **Reference Specific Guides**: Use specialized guides for specific topics
+
+## Security
+
+### Current Security Features
+
+- **SSL/TLS Encryption**: All communication is SSL secured
+- **Self-Signed Certificates**: Internal communication uses self-signed certificates
+- **Let's Encrypt**: External access uses Let's Encrypt certificates
+- **Namespace Isolation**: Applications run in dedicated namespaces
+
+### Security Recommendations
+
+- **Change Default Credentials**: Update default credentials for production
+- **Network Policies**: Implement network policies for additional security
+- **RBAC**: Ensure proper RBAC configuration
+- **Audit Logging**: Enable audit logging for compliance
+
+## Monitoring and Maintenance
+
+### Health Checks
+
+```bash
+# Check application status
+kubectl get pods -n minio
+kubectl get applications -n argocd
+
+# Check SSL certificates
+kubectl get certificate -n minio
+
+# View logs
+kubectl logs -l app.kubernetes.io/name=minio -n minio
+```
+
+### Backup and Recovery
+
+- **Data Backup**: Backup NFS storage and application data
+- **Configuration Backup**: Backup secrets and configmaps
+- **Certificate Backup**: Backup certificate secrets
+
+## Contributing
+
+### Adding New Applications
+
+1. **Create Application Manifests**: Add to `applications/<app-name>/`
+2. **Create Documentation**: Add to `docs/<app-name>/`
+3. **Update Main Index**: Add application to `docs/README.md`
+4. **Follow Standards**: Use established patterns and structure
+
+### Development Workflow
+
+1. **Create Feature Branch**: `git checkout -b feature/new-application`
+2. **Develop and Test**: Create manifests and documentation
+3. **Validate**: Run validation scripts
+4. **Submit PR**: Create pull request with comprehensive description
+5. **Review and Merge**: Follow review process
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Storage Class Not Found**: Ensure `nfs-client` storage class is installed
-2. **SSL Certificate Issues**: Verify `letsencrypt-staging` cluster issuer is working
-3. **Ingress Issues**: Check NGINX ingress controller status
+1. **Storage Issues**: Verify NFS storage class availability
+2. **SSL Issues**: Check cert-manager and certificate status
+3. **Network Issues**: Verify ingress controller and service endpoints
+4. **ArgoCD Issues**: Check application sync status and logs
 
-### Useful Commands
+### Debug Commands
 
 ```bash
-# Check MinIO pods
-kubectl get pods -n minio
+# Comprehensive health check
+kubectl get all,certificate,issuer,ingress -n minio
 
-# Check MinIO services (API ClusterIP + Console NodePort)
-kubectl get svc -n minio
+# Check all events
+kubectl get events -n minio --sort-by='.lastTimestamp'
 
-# Check ingress (API only)
-kubectl get ingress -n minio
-
-# Check PVC
-kubectl get pvc -n minio
-
-# View logs
-kubectl logs -n minio deployment/minio-deployment
-
-# Access console internally (replace NODE_IP with your K3s node IP)
-# Console URL: http://NODE_IP:30001
+# Check ArgoCD status
+kubectl describe application minio -n argocd
 ```
-
-## Contributing
-
-1. Make changes to the appropriate overlay or base configuration
-2. Test changes in development environment first
-3. Commit changes with descriptive messages
-4. ArgoCD will automatically sync changes based on the configured sync policy
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License - see the LICENSE file for details. 
