@@ -10,6 +10,10 @@ spec:
     - minio.minio.svc.cluster.local
     - minio-api.minio.svc.cluster.local
     - minio-console.minio.svc.cluster.local
+    - minio-0.minio-hl.minio.svc.cluster.local
+    - minio-1.minio-hl.minio.svc.cluster.local
+    - minio-2.minio-hl.minio.svc.cluster.local
+    - minio-3.minio-hl.minio.svc.cluster.local
     - minio
     - localhost
     - '*.minio.svc.cluster.local'
