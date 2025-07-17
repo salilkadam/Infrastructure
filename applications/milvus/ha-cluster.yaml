@@ -30,7 +30,7 @@ data:
       port: 9000
       accessKeyID: "{{ MILVUS_S3_ACCESS_ID }}"
       secretAccessKey: "{{ MILVUS_S3_SECRET_ACCESS_KEY }}"
-      useSSL: false
+      useSSL: true
       bucketName: milvus
       rootPath: file
     # Kafka configuration
@@ -126,7 +126,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -177,7 +177,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -228,7 +228,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -280,7 +280,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -331,7 +331,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -383,7 +383,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -434,7 +434,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
@@ -486,7 +486,7 @@ spec:
               name: minio-credentials
               key: secretkey
         - name: MINIO_ENDPOINT
-          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+          value: "https://prod-minio-service-prod.minio.svc.cluster.local:9000"
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
