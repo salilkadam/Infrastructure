@@ -7,7 +7,7 @@ resources:
 patches:
 - target:
     kind: PersistentVolumeClaim
-    name: minio-storage
+    name: prod-minio-storage-prod
   patch: |-
     - op: replace
       path: /spec/resources/requests/storage
@@ -15,7 +15,7 @@ patches:
 
 - target:
     kind: Deployment
-    name: minio-deployment
+    name: prod-minio-deployment-prod
   patch: |-
     - op: replace
       path: /spec/replicas
@@ -35,7 +35,7 @@ patches:
 
 - target:
     kind: Ingress
-    name: minio-ingress
+    name: prod-minio-ingress-prod
   patch: |-
     - op: replace
       path: /metadata/annotations/cert-manager.io~1cluster-issuer
@@ -55,7 +55,7 @@ patches:
 
 - target:
     kind: Certificate
-    name: minio-internal-ca
+    name: prod-minio-internal-ca-prod
   patch: |-
     - op: replace
       path: /spec/issuerRef/name
@@ -63,7 +63,7 @@ patches:
 
 - target:
     kind: Certificate
-    name: minio-internal-tls
+    name: prod-minio-internal-tls-prod
   patch: |-
     - op: replace
       path: /spec/issuerRef/name
