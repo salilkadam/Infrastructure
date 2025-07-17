@@ -26,7 +26,7 @@ data:
       type: etcd
     # S3/MinIO configuration
     minio:
-      address: minio-hl.minio.svc.cluster.local
+      address: prod-minio-service-prod.minio.svc.cluster.local
       port: 9000
       accessKeyID: "{{ MILVUS_S3_ACCESS_ID }}"
       secretAccessKey: "{{ MILVUS_S3_SECRET_ACCESS_KEY }}"
@@ -110,7 +110,7 @@ spec:
       - name: milvus-proxy
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "proxy", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "proxy"]
         ports:
         - containerPort: 19530
         - containerPort: 19121
@@ -130,7 +130,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -162,7 +162,7 @@ spec:
       - name: milvus-root-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "rootcoord", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "rootcoord"]
         ports:
         - containerPort: 19530
         env:
@@ -181,7 +181,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -213,7 +213,7 @@ spec:
       - name: milvus-data-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "datacoord", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "datacoord"]
         ports:
         - containerPort: 19530
         env:
@@ -232,7 +232,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -265,7 +265,7 @@ spec:
       - name: milvus-data-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "datanode", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "datanode"]
         ports:
         - containerPort: 19530
         env:
@@ -284,7 +284,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -316,7 +316,7 @@ spec:
       - name: milvus-query-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "querycoord", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "querycoord"]
         ports:
         - containerPort: 19530
         env:
@@ -335,7 +335,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -368,7 +368,7 @@ spec:
       - name: milvus-query-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "querynode", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "querynode"]
         ports:
         - containerPort: 19530
         env:
@@ -387,7 +387,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -419,7 +419,7 @@ spec:
       - name: milvus-index-coordinator
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "indexcoord", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "indexcoord"]
         ports:
         - containerPort: 19530
         env:
@@ -438,7 +438,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
@@ -471,7 +471,7 @@ spec:
       - name: milvus-index-node
         image: milvusdb/milvus:v2.4.0
         command: ["milvus"]
-        args: ["run", "indexnode", "-c", "/etc/milvus/configs/milvus.yaml"]
+        args: ["run", "indexnode"]
         ports:
         - containerPort: 19530
         env:
@@ -490,7 +490,7 @@ spec:
         # Mount config at default path
         volumeMounts:
         - name: milvus-config
-          mountPath: /etc/milvus/configs/milvus.yaml
+          mountPath: /milvus/configs/milvus.yaml
           subPath: 00_milvus_default.yaml
       volumes:
       - name: milvus-config
