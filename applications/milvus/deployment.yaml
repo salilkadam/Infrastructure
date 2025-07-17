@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: milvus
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-credentials
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: object-storage
+    app.kubernetes.io/part-of: infrastructure
+type: Opaque
+data:
+  accesskey: Y2MzYkdDckVZODdkU3Z2WGdreXk=
+  secretkey: MFdzMjloM0tkUzNEdWpKZnFNZmpIQjZjUkpnUGJlbmxqeXhzZVhBago=
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-service
+  namespace: milvus
+spec:
+  ports:
+    - port: 19530
+      targetPort: 19530
+      name: grpc
+    - port: 19121
+      targetPort: 19121
+      name: http
+  selector:
+    app: milvus
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: milvus
+  namespace: milvus
+spec:
+  serviceName: milvus-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus
+  template:
+    metadata:
+      labels:
+        app: milvus
+    spec:
+      containers:
+      - name: milvus
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "standalone", "-c", "/opt/bitnami/milvus/configs/00_milvus_default.yaml"]
+        ports:
+        - containerPort: 19530
+          name: grpc
+        - containerPort: 19121
+          name: http
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: ETCD_ENDPOINTS
+          value: "http://etcd-client.etcd.svc.cluster.local:2379"
+        - name: KAFKA_BROKER_LIST
+          value: "milvus-kafka-controller-0.milvus-kafka-controller-headless:9092"
+        volumeMounts:
+        - name: milvus-data
+          mountPath: /var/lib/milvus
+        - name: milvus-config
+          mountPath: /opt/bitnami/milvus/configs/00_milvus_default.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-data
+        persistentVolumeClaim:
+          claimName: milvus-pvc
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: milvus-pvc
+  namespace: milvus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 50Gi 

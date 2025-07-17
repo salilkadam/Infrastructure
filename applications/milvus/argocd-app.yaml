@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: milvus-ha-cluster
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salilkadam/Infrastructure.git
+    targetRevision: HEAD
+    path: applications/milvus
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: milvus
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+  revisionHistoryLimit: 10 

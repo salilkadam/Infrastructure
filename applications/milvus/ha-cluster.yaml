@@ -1,0 +1,552 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: milvus
+---
+# Secret for MinIO credentials (already created, reference only)
+# apiVersion: v1
+# kind: Secret
+# ...
+---
+# ConfigMap for Milvus cluster config (reuse previous configmap)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: milvus
+  namespace: milvus
+data:
+  00_milvus_default.yaml: |
+    # etcd configuration
+    etcd:
+      endpoints:
+        - http://etcd-client.etcd.svc.cluster.local:2379
+      ssl:
+        enabled: false
+    metastore:
+      type: etcd
+    # S3/MinIO configuration
+    minio:
+      address: minio-hl.minio.svc.cluster.local
+      port: 9000
+      accessKeyID: "{{ MILVUS_S3_ACCESS_ID }}"
+      secretAccessKey: "{{ MILVUS_S3_SECRET_ACCESS_KEY }}"
+      useSSL: false
+      bucketName: milvus
+      rootPath: file
+    # Kafka configuration
+    kafka:
+      brokerList:
+        - milvus-kafka-controller-0.milvus-kafka-controller-headless:9092
+      securityProtocol: SASL_PLAINTEXT
+      saslMechanisms: PLAIN
+      saslUsername: user
+      saslPassword: "{{ MILVUS_KAFKA_PASSWORD }}"
+    # Log configuration
+    log:
+      level: info
+      stdout: true
+    # Common configuration
+    common:
+      storageType: minio
+      security:
+        authorizationEnabled: false
+---
+# Headless service for Milvus internal communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-headless
+  namespace: milvus
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: milvus
+  ports:
+    - port: 19530
+      name: grpc
+    - port: 19121
+      name: http
+---
+# External service for Milvus proxy
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-proxy
+  namespace: milvus
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/component: proxy
+  ports:
+    - port: 19530
+      targetPort: 19530
+      name: grpc
+    - port: 19121
+      targetPort: 19121
+      name: http
+---
+# Milvus Proxy Deployment (HA)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-proxy
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: proxy
+    spec:
+      containers:
+      - name: milvus-proxy
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "proxy"]
+        ports:
+        - containerPort: 19530
+        - containerPort: 19121
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Root Coordinator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-root-coordinator
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: root-coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: root-coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: root-coordinator
+    spec:
+      containers:
+      - name: milvus-root-coordinator
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "rootcoord"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Data Coordinator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-data-coordinator
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: data-coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: data-coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: data-coordinator
+    spec:
+      containers:
+      - name: milvus-data-coordinator
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "datacoord"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Data Node StatefulSet (HA)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: milvus-data-node
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: data-node
+spec:
+  serviceName: milvus-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: data-node
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: data-node
+    spec:
+      containers:
+      - name: milvus-data-node
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "datanode"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Query Coordinator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-query-coordinator
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: query-coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: query-coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: query-coordinator
+    spec:
+      containers:
+      - name: milvus-query-coordinator
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "querycoord"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Query Node StatefulSet (HA)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: milvus-query-node
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: query-node
+spec:
+  serviceName: milvus-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: query-node
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: query-node
+    spec:
+      containers:
+      - name: milvus-query-node
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "querynode"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Index Coordinator Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-index-coordinator
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: index-coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: index-coordinator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: index-coordinator
+    spec:
+      containers:
+      - name: milvus-index-coordinator
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "indexcoord"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Index Node StatefulSet (HA)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: milvus-index-node
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: index-node
+spec:
+  serviceName: milvus-headless
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: index-node
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: index-node
+    spec:
+      containers:
+      - name: milvus-index-node
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "indexnode"]
+        ports:
+        - containerPort: 19530
+        env:
+        - name: MILVUS_S3_ACCESS_ID
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: accesskey
+        - name: MILVUS_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-credentials
+              key: secretkey
+        - name: MINIO_ENDPOINT
+          value: "prod-minio-service-prod.minio.svc.cluster.local:9000"
+        # Mount config at default path
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /etc/milvus/configs/milvus.yaml
+          subPath: 00_milvus_default.yaml
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus
+---
+# Milvus Attu (UI) Deployment (optional)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-attu
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: attu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: attu
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: attu
+    spec:
+      containers:
+      - name: attu
+        image: zilliz/attu:v2.2.7
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MILVUS_URL
+          value: "milvus-proxy.milvus.svc.cluster.local:19530"
+---
+# Example PVC for Milvus data (if needed by any component)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: milvus-pvc
+  namespace: milvus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 50Gi 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-credentials
+  namespace: milvus
+type: Opaque
+data:
+  accesskey: Y2MzYkdDckVZODdkU3Z2WGdreXk=
+  secretkey: MFdzMjloM0tkUzNEdWpKZnFNZmpIQjZjUkpnUGJlbmxqeXhzZVhBago= 

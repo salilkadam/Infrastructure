@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: milvus
+  namespace: milvus
+data:
+  00_milvus_default.yaml: |
+    # etcd configuration
+    etcd:
+      endpoints:
+        - http://etcd-client.etcd.svc.cluster.local:2379
+      ssl:
+        enabled: false
+        tlsCert: /opt/bitnami/milvus/configs/cert/etcd/client/tls.crt
+        tlsKey: /opt/bitnami/milvus/configs/cert/etcd/client/tls.key
+        tlsCACert: /opt/bitnami/milvus/configs/cert/etcd/client/ca.crt
+    metastore:
+      type: etcd
+
+    # S3/MinIO configuration
+    minio:
+      address: prod-minio-service-prod.minio.svc.cluster.local
+      port: 9000
+      accessKeyID: "{{ MILVUS_S3_ACCESS_ID }}"
+      secretAccessKey: "{{ MILVUS_S3_SECRET_ACCESS_KEY }}"
+      useSSL: true
+      bucketName: milvus
+      rootPath: file
+      useIAM: <nil>
+      cloudProvider: 
+      iamEndpoint: 
+
+    # Kafka configuration
+    kafka:
+      brokerList:
+        - milvus-kafka-controller-0.milvus-kafka-controller-headless:9092
+      securityProtocol: SASL_PLAINTEXT
+      saslMechanisms: PLAIN
+      saslUsername: user
+      saslPassword: "{{ MILVUS_KAFKA_PASSWORD }}"
+
+    # Data coordinator
+    dataCoord:
+      address: milvus-data-coordinator
+      port: 19530
+
+    # Root coordinator
+    rootCoord:
+      address: milvus-root-coordinator
+      port: 19530
+
+    # Index coordinator
+    indexCoord:
+      address: milvus-index-coordinator
+      port: 19530
+
+    # Query coordinator
+    queryCoord:
+      address: milvus-query-coordinator
+      port: 19530
+
+    # Data node
+    dataNode:
+      port: 19530
+
+    # Index node
+    indexNode:
+      port: 19530
+
+    # Query node
+    queryNode:
+      port: 19530
+
+    proxy:
+      port: 19530
+      accessLog:
+        localPath: /dev
+        filename: stdout
+      http:
+        enabled: true
+
+    # Log configuration
+    log:
+      level: info
+      stdout: true
+
+    # Common configuration
+    common:
+      storageType: minio
+      security:
+        authorizationEnabled: false 
