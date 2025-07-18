@@ -152,7 +152,7 @@ spec:
             secretName: etcd
         - name: etcd-tls
           secret:
-            secretName: minio-internal-tls
+            secretName: etcd-tls
         - name: etcd-jwt-token
           secret:
             secretName: etcd-jwt-token
