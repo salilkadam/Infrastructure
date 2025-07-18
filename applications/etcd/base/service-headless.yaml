@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd-headless
+  namespace: etcd
+  labels:
+    app.kubernetes.io/name: etcd
+    app.kubernetes.io/instance: etcd
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: client
+      port: 2379
+      targetPort: client
+    - name: peer
+      port: 2380
+      targetPort: peer
+  selector:
+    app.kubernetes.io/name: etcd
+    app.kubernetes.io/instance: etcd 

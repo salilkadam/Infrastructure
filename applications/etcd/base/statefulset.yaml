@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: etcd
+  namespace: etcd
+  labels:
+    app.kubernetes.io/name: etcd
+    app.kubernetes.io/instance: etcd
+spec:
+  serviceName: etcd-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: etcd
+      app.kubernetes.io/instance: etcd
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: etcd
+        app.kubernetes.io/instance: etcd
+    spec:
+      serviceAccountName: etcd
+      containers:
+        - name: etcd
+          image: docker.io/bitnami/etcd:3.6.2-debian-12-r0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ETCD_NAME
+              value: "$(MY_POD_NAME)"
+            - name: ETCD_DATA_DIR
+              value: /bitnami/etcd/data
+            - name: ETCD_LOG_LEVEL
+              value: info
+            - name: ALLOW_NONE_AUTHENTICATION
+              value: "no"
+            - name: ETCD_ROOT_PASSWORD_FILE
+              value: /opt/bitnami/etcd/secrets/etcd-root-password
+            - name: ETCD_ON_K8S
+              value: "yes"
+            - name: ETCD_START_FROM_SNAPSHOT
+              value: "no"
+            - name: ETCD_DISASTER_RECOVERY
+              value: "no"
+            - name: ETCD_AUTH_TOKEN
+              value: "simple"
+            - name: ETCD_ADVERTISE_CLIENT_URLS
+              value: "http://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2379,http://etcd.etcd.svc.cluster.local:2379"
+            - name: ETCD_LISTEN_CLIENT_URLS
+              value: "http://0.0.0.0:2379"
+            - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
+              value: "http://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2380"
+            - name: ETCD_LISTEN_PEER_URLS
+              value: "http://0.0.0.0:2380"
+            - name: ETCD_INITIAL_CLUSTER_TOKEN
+              value: etcd-cluster-k8s
+            - name: ETCD_INITIAL_CLUSTER
+              value: "etcd-0=http://etcd-0.etcd-headless.etcd.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd-headless.etcd.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd-headless.etcd.svc.cluster.local:2380"
+            - name: ETCD_CLUSTER_DOMAIN
+              value: etcd-headless.etcd.svc.cluster.local
+          ports:
+            - containerPort: 2379
+              name: client
+            - containerPort: 2380
+              name: peer
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 2379
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /opt/bitnami/scripts/etcd/healthcheck.sh
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+              ephemeral-storage: 50Mi
+            limits:
+              cpu: 375m
+              memory: 384Mi
+              ephemeral-storage: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1001
+            runAsGroup: 1001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            privileged: false
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/etcd
+            - name: etcd-secrets
+              mountPath: /opt/bitnami/etcd/secrets
+      securityContext:
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: etcd-secrets
+          secret:
+            secretName: etcd
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+        storageClassName: nfs-client 
