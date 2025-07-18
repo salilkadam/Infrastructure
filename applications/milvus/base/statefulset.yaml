@@ -20,6 +20,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: proxy
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-proxy
         image: milvusdb/milvus:v2.4.0
@@ -92,6 +101,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: root-coordinator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-root-coordinator
         image: milvusdb/milvus:v2.4.0
@@ -159,6 +177,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: data-coordinator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-data-coordinator
         image: milvusdb/milvus:v2.4.0
@@ -233,6 +260,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: index-coordinator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-index-coordinator
         image: milvusdb/milvus:v2.4.0
@@ -300,6 +336,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: query-coordinator
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-query-coordinator
         image: milvusdb/milvus:v2.4.0
@@ -367,6 +412,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: data-node
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-data-node
         image: milvusdb/milvus:v2.4.0
@@ -448,6 +502,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: index-node
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-index-node
         image: milvusdb/milvus:v2.4.0
@@ -522,6 +585,15 @@ spec:
         app.kubernetes.io/name: milvus
         app.kubernetes.io/component: query-node
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ubuntu
       containers:
       - name: milvus-query-node
         image: milvusdb/milvus:v2.4.0
@@ -552,6 +624,10 @@ spec:
         - name: QUERYNODE_LOCAL_STORAGE_PATH
           value: "/var/lib/milvus"
         - name: LOCAL_STORAGE_PATH
+          value: "/var/lib/milvus"
+        - name: QUERYNODE_LOCAL_STORAGE_PATH
+          value: "/var/lib/milvus"
+        - name: MILVUS_LOCAL_STORAGE_PATH
           value: "/var/lib/milvus"
         volumeMounts:
         - name: milvus-config
