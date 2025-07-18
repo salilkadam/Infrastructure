@@ -31,44 +31,92 @@ data:
       pulsar:
         address: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         webAddress: "http://pulsar-service.pulsar.svc.cluster.local:8080"
-        maxMessageSize: 5242880
+        maxMessageSize: 52428800  # 50MB for production multimodal data
         authPlugin: ""
         authParams: ""
         tenant: ""
         namespace: ""
 
-    # Data coordinator
+    # Data coordinator - Production settings
     dataCoord:
       address: milvus-data-coordinator
       port: 19530
+      # Production data management
+      segment:
+        maxSize: 5368709120  # 5GB per segment
+        sealProportion: 0.25
+        flushInterval: 1
+        maxLifetime: 86400  # 24 hours
+      # Compaction settings
+      compaction:
+        enableAutoCompaction: true
+        enableGarbageCollection: true
+        garbageCollectionInterval: 3600  # 1 hour
 
-    # Root coordinator
+    # Root coordinator - Production settings
     rootCoord:
       address: milvus-root-coordinator
       port: 19530
+      # Metadata management
+      meta:
+        maxRetentionDuration: 604800  # 7 days
+        enableIndexMeta: true
 
-    # Index coordinator
+    # Index coordinator - Production settings
     indexCoord:
       address: milvus-index-coordinator
       port: 19530
+      # Index building settings
+      index:
+        enableIndex: true
+        maxIndexConcurrency: 4
+        indexBuildTimeout: 3600  # 1 hour
 
-    # Query coordinator
+    # Query coordinator - Production settings
     queryCoord:
       address: milvus-query-coordinator
       port: 19530
+      # Query optimization
+      query:
+        maxConcurrentQueries: 1000
+        queryTimeout: 300  # 5 minutes
+        maxMemoryUsage: 8589934592  # 8GB
 
-    # Data node
+    # Data node - Production settings
     dataNode:
       port: 19530
+      # Data processing
+      flush:
+        insertBufSize: 16777216  # 16MB
+        maxInsertBufferSize: 134217728  # 128MB
+      # Storage settings
+      storage:
+        path: "/var/lib/milvus"
+        maxFileSize: 1073741824  # 1GB
 
-    # Index node
+    # Index node - Production settings
     indexNode:
       port: 19530
+      # Index building
+      index:
+        maxConcurrentIndexBuilds: 4
+        maxIndexBuildMemory: 4294967296  # 4GB
+        indexBuildTimeout: 3600  # 1 hour
 
-    # Query node
+    # Query node - Production settings
     queryNode:
       port: 19530
       localStoragePath: /var/lib/milvus
+      # Query processing
+      query:
+        maxConcurrentQueries: 1000
+        maxMemoryUsage: 8589934592  # 8GB
+        searchCacheSize: 1073741824  # 1GB
+      # Vector search optimization
+      search:
+        maxConcurrentSearches: 100
+        searchTimeout: 300  # 5 minutes
+        maxSearchMemory: 4294967296  # 4GB
 
     proxy:
       port: 19530
@@ -77,14 +125,44 @@ data:
         filename: stdout
       http:
         enabled: true
+      # Production proxy settings
+      maxConcurrentRequests: 10000
+      maxRequestSize: 67108864  # 64MB
+      requestTimeout: 300  # 5 minutes
 
-    # Log configuration
+    # Log configuration - Production
     log:
       level: info
       stdout: true
+      file:
+        maxSize: 100
+        maxAge: 30
+        maxBackups: 10
+        compress: true
 
-    # Common configuration
+    # Common configuration - Production
     common:
       storageType: minio
       security:
-        authorizationEnabled: false 
+        authorizationEnabled: false
+      # Performance tuning
+      cache:
+        enabled: true
+        maxSize: 1073741824  # 1GB
+        expireTime: 3600  # 1 hour
+      
+      # Resource limits
+      resources:
+        maxMemoryUsage: 17179869184  # 16GB
+        maxConcurrentOperations: 1000
+        
+      # Monitoring
+      metrics:
+        enabled: true
+        port: 9091
+        
+      # Health check
+      health:
+        enabled: true
+        interval: 30
+        timeout: 10 

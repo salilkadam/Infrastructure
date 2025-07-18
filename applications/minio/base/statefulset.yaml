@@ -5,7 +5,7 @@ metadata:
   namespace: minio
 spec:
   serviceName: minio-hl
-  replicas: 4
+  replicas: 4  # Production: High availability and performance
   selector:
     matchLabels:
       app.kubernetes.io/name: minio
@@ -58,11 +58,11 @@ spec:
               mountPath: /data
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "500m"
-            limits:
-              memory: "1Gi"
+              memory: "2Gi"
               cpu: "1000m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
           livenessProbe:
             httpGet:
               path: /minio/health/live
@@ -86,4 +86,4 @@ spec:
         storageClassName: nfs-client
         resources:
           requests:
-            storage: 500Gi 
+            storage: 100Gi  # Production: Large storage capacity 

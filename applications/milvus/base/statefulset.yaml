@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: proxy
 spec:
   serviceName: milvus-headless
-  replicas: 2
+  replicas: 2  # Production: High availability
   selector:
     matchLabels:
       app.kubernetes.io/name: milvus
@@ -62,11 +62,11 @@ spec:
           subPath: milvus.yaml
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
+            memory: "1Gi"
             cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
       volumes:
       - name: milvus-config
         configMap:

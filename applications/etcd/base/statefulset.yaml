@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: etcd
 spec:
   serviceName: etcd-headless
-  replicas: 3
+  replicas: 5  # Production: Odd number for quorum
   selector:
     matchLabels:
       app.kubernetes.io/name: etcd
@@ -111,13 +111,13 @@ spec:
             failureThreshold: 5
           resources:
             requests:
-              cpu: 250m
-              memory: 256Mi
-              ephemeral-storage: 50Mi
+              cpu: 2000m
+              memory: 4Gi
+              ephemeral-storage: 100Mi
             limits:
-              cpu: 375m
-              memory: 384Mi
-              ephemeral-storage: 2Gi
+              cpu: 4000m
+              memory: 8Gi
+              ephemeral-storage: 10Gi
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 1001
@@ -166,5 +166,5 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 8Gi
+            storage: 100Gi  # Production: Large metadata storage
         storageClassName: nfs-client 
