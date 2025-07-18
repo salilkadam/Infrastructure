@@ -68,6 +68,7 @@ data:
     # Query node
     queryNode:
       port: 19530
+      localStoragePath: /var/lib/milvus
 
     proxy:
       port: 19530
