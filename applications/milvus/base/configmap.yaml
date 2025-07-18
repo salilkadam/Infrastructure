@@ -26,9 +26,6 @@ data:
       useSSL: true
       bucketName: milvus
       rootPath: file
-      ssl:
-        enabled: true
-        caCert: "/etc/ssl/certs/minio-ca.crt"
     mq:
       type: pulsar
       pulsar:
