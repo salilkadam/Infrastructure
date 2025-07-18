@@ -12,4 +12,4 @@ resources:
   - cert-clusterissuer-selfsigned.yaml
   - cert-ca-issuer.yaml
   - cert-internal-ca.yaml
-  - cert-minio-tls.yaml 
+  - cert-minio-tls.yaml
