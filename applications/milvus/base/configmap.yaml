@@ -1,43 +1,36 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: milvus
+  name: milvus-config
   namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/part-of: milvus
 data:
   milvus.yaml: |
     # etcd configuration
     etcd:
       endpoints:
-        - http://etcd-client.etcd.svc.cluster.local:2379
+        - http://etcd.etcd.svc.cluster.local:2379
       ssl:
         enabled: false
-        tlsCert: /opt/bitnami/milvus/configs/cert/etcd/client/tls.crt
-        tlsKey: /opt/bitnami/milvus/configs/cert/etcd/client/tls.key
-        tlsCACert: /opt/bitnami/milvus/configs/cert/etcd/client/ca.crt
+      username: "{{ ETCD_USERNAME }}"
+      password: "{{ ETCD_PASSWORD }}"
     metastore:
       type: etcd
 
     # S3/MinIO configuration
     minio:
-      address: prod-minio-service-prod.minio.svc.cluster.local
+      address: minio-api.minio.svc.cluster.local
       port: 9000
-      accessKeyID: "{{ MILVUS_S3_ACCESS_ID }}"
-      secretAccessKey: "{{ MILVUS_S3_SECRET_ACCESS_KEY }}"
+      accessKeyID: "{{ MINIO_ACCESS_KEY }}"
+      secretAccessKey: "{{ MINIO_SECRET_KEY }}"
       useSSL: true
       bucketName: milvus
       rootPath: file
-      useIAM: <nil>
+      useIAM: false
       cloudProvider: 
       iamEndpoint: 
-
-    # Kafka configuration
-    kafka:
-      brokerList:
-        - milvus-kafka-controller-0.milvus-kafka-controller-headless:9092
-      securityProtocol: SASL_PLAINTEXT
-      saslMechanisms: PLAIN
-      saslUsername: user
-      saslPassword: "{{ MILVUS_KAFKA_PASSWORD }}"
 
     # Data coordinator
     dataCoord:

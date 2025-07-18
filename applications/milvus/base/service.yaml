@@ -1,0 +1,42 @@
+# Headless service for Milvus internal communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-headless
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/part-of: milvus
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: milvus
+  ports:
+    - port: 19530
+      name: grpc
+    - port: 19121
+      name: http
+---
+# External service for Milvus proxy
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-proxy
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: proxy
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: proxy
+  ports:
+    - port: 19530
+      targetPort: 19530
+      nodePort: 30930
+      name: grpc
+    - port: 19121
+      targetPort: 19121
+      nodePort: 30921
+      name: http 

@@ -1,16 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: milvus-ha-cluster
+  name: milvus
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/part-of: milvus
 spec:
   project: default
   source:
     repoURL: https://github.com/salilkadam/Infrastructure.git
     targetRevision: HEAD
-    path: applications/milvus
-    directory:
-      recurse: true
+    path: applications/milvus/base
   destination:
     server: https://kubernetes.default.svc
     namespace: milvus
