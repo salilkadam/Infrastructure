@@ -14,7 +14,7 @@ spec:
     path: applications/postgresql/overlays/dev
   destination:
     server: https://kubernetes.default.svc
-    namespace: postgresql
+    namespace: postgres
   syncPolicy:
     automated:
       prune: true

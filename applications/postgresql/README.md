@@ -4,10 +4,11 @@ This directory contains the Kubernetes manifests for deploying a PostgreSQL clus
 
 ## Architecture
 
-- **PostgreSQL**: Single-node PostgreSQL 15 cluster with persistent storage
+- **PostgreSQL**: Scalable PostgreSQL 15 cluster with persistent storage
 - **pgAdmin**: Web-based PostgreSQL administration tool
 - **ArgoCD**: GitOps deployment management
 - **NFS Storage**: Persistent storage using NFS client provisioner
+- **Scaling**: Horizontal scaling support with environment-specific replica counts
 
 ## Components
 
@@ -20,23 +21,23 @@ This directory contains the Kubernetes manifests for deploying a PostgreSQL clus
 - `kustomization.yaml`: Base kustomization configuration
 
 ### Environment Overlays
-- `overlays/dev/`: Development environment with minimal resources
-- `overlays/staging/`: Staging environment with moderate resources
-- `overlays/prod/`: Production environment with high resources
+- `overlays/dev/`: Development environment with minimal resources (1 replica)
+- `overlays/staging/`: Staging environment with moderate resources (2 replicas)
+- `overlays/prod/`: Production environment with high resources (3 replicas)
 
 ## Resource Allocation
 
 ### Development
-- PostgreSQL: 125m CPU, 256Mi memory (requests) / 250m CPU, 512Mi memory (limits)
-- pgAdmin: 50m CPU, 64Mi memory (requests) / 100m CPU, 128Mi memory (limits)
+- PostgreSQL: 100m CPU, 256Mi memory (requests) / 200m CPU, 512Mi memory (limits) - 1 replica
+- pgAdmin: 25m CPU, 64Mi memory (requests) / 50m CPU, 128Mi memory (limits) - 1 replica
 
 ### Staging
-- PostgreSQL: 250m CPU, 512Mi memory (requests) / 500m CPU, 1Gi memory (limits)
-- pgAdmin: 100m CPU, 128Mi memory (requests) / 200m CPU, 256Mi memory (limits)
+- PostgreSQL: 250m CPU, 512Mi memory (requests) / 500m CPU, 1Gi memory (limits) - 2 replicas
+- pgAdmin: 100m CPU, 128Mi memory (requests) / 200m CPU, 256Mi memory (limits) - 2 replicas
 
 ### Production
-- PostgreSQL: 500m CPU, 1Gi memory (requests) / 1000m CPU, 2Gi memory (limits)
-- pgAdmin: 200m CPU, 256Mi memory (requests) / 400m CPU, 512Mi memory (limits)
+- PostgreSQL: 500m CPU, 1Gi memory (requests) / 1000m CPU, 2Gi memory (limits) - 3 replicas
+- pgAdmin: 200m CPU, 256Mi memory (requests) / 400m CPU, 512Mi memory (limits) - 2 replicas
 
 ## Configuration
 
@@ -86,20 +87,20 @@ This directory contains the Kubernetes manifests for deploying a PostgreSQL clus
 ## Access
 
 ### PostgreSQL
-- **Internal**: `postgresql.postgresql.svc.cluster.local:5432`
+- **Internal**: `postgresql.postgres.svc.cluster.local:5432`
 - **External**: Use port-forward or ingress
 
 ### pgAdmin
-- **Internal**: `pgadmin.postgresql.svc.cluster.local:80`
+- **Internal**: `pgadmin.postgres.svc.cluster.local:80`
 - **External**: Use port-forward or ingress
 
 ### Port Forwarding
 ```bash
 # PostgreSQL
-kubectl port-forward svc/postgresql 5432:5432 -n postgresql
+kubectl port-forward svc/postgresql 5432:5432 -n postgres
 
 # pgAdmin
-kubectl port-forward svc/pgadmin 8080:80 -n postgresql
+kubectl port-forward svc/pgadmin 8080:80 -n postgres
 ```
 
 ## Monitoring
@@ -111,10 +112,10 @@ kubectl port-forward svc/pgadmin 8080:80 -n postgresql
 ### Logs
 ```bash
 # PostgreSQL logs
-kubectl logs -f postgresql-0 -n postgresql
+kubectl logs -f pg-0 -n postgres
 
 # pgAdmin logs
-kubectl logs -f deployment/pgadmin -n postgresql
+kubectl logs -f deployment/pgadmin -n postgres
 ```
 
 ### Resource Usage
@@ -126,12 +127,12 @@ kubectl top pods -n postgresql
 
 ### Manual Backup
 ```bash
-kubectl exec -it postgresql-0 -n postgresql -- pg_dump -U milvus_user milvus_metadata > backup.sql
+kubectl exec -it pg-0 -n postgres -- pg_dump -U milvus_user milvus_metadata > backup.sql
 ```
 
 ### Manual Restore
 ```bash
-kubectl exec -i postgresql-0 -n postgresql -- psql -U milvus_user milvus_metadata < backup.sql
+kubectl exec -i pg-0 -n postgres -- psql -U milvus_user milvus_metadata < backup.sql
 ```
 
 ## Troubleshooting
@@ -153,16 +154,16 @@ kubectl exec -i postgresql-0 -n postgresql -- psql -U milvus_user milvus_metadat
 ### Debug Commands
 ```bash
 # Check pod status
-kubectl get pods -n postgresql
+kubectl get pods -n postgres
 
 # Check services
-kubectl get svc -n postgresql
+kubectl get svc -n postgres
 
 # Check persistent volumes
-kubectl get pvc -n postgresql
+kubectl get pvc -n postgres
 
 # Check events
-kubectl get events -n postgresql --sort-by='.lastTimestamp'
+kubectl get events -n postgres --sort-by='.lastTimestamp'
 ```
 
 ## Security Considerations
@@ -178,6 +179,10 @@ kubectl get events -n postgresql --sort-by='.lastTimestamp'
 ### Horizontal Scaling
 - PostgreSQL StatefulSet can be scaled to multiple replicas for read replicas
 - pgAdmin can be scaled for high availability
+- Environment-specific scaling:
+  - Development: 1 replica (minimal resources)
+  - Staging: 2 replicas (moderate resources)
+  - Production: 3 replicas (high availability)
 
 ### Vertical Scaling
 - Adjust resource requests and limits in overlay configurations

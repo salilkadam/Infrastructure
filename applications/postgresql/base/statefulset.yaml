@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgresql
-  namespace: postgresql
+  name: pg
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: database
 spec:
-  serviceName: postgresql-headless
+  serviceName: pg-headless
   replicas: 1
   selector:
     matchLabels:
@@ -68,7 +68,7 @@ spec:
             memory: "1Gi"
             cpu: "500m"
         volumeMounts:
-        - name: postgresql-data
+        - name: pg-data
           mountPath: /var/lib/postgresql/data
         - name: postgresql-config
           mountPath: /etc/postgresql/postgresql.conf
@@ -103,7 +103,7 @@ spec:
           name: postgresql-config
   volumeClaimTemplates:
   - metadata:
-      name: postgresql-data
+      name: pg-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

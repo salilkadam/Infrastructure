@@ -12,7 +12,7 @@ resources:
 patches:
 - target:
     kind: StatefulSet
-    name: postgresql
+    name: pg
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
@@ -26,6 +26,9 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "1000m"
+    - op: replace
+      path: /spec/replicas
+      value: 3
 - target:
     kind: Deployment
     name: pgadmin
@@ -42,6 +45,9 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "400m"
+    - op: replace
+      path: /spec/replicas
+      value: 2
 
 commonLabels:
   environment: production 

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgresql
-  namespace: postgresql
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: database
@@ -20,8 +20,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgresql-headless
-  namespace: postgresql
+  name: pg-headless
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: database

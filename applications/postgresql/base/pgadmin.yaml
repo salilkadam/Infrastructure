@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pgadmin
-  namespace: postgresql
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: admin
@@ -92,7 +92,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pgadmin
-  namespace: postgresql
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: admin

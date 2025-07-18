@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgresql-config
-  namespace: postgresql
+  namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: config
