@@ -6,6 +6,7 @@ metadata:
 spec:
   commonName: minio-hl.minio.svc.cluster.local
   dnsNames:
+    # MinIO services
     - minio-hl.minio.svc.cluster.local
     - minio.minio.svc.cluster.local
     - minio-api.minio.svc.cluster.local
@@ -14,9 +15,18 @@ spec:
     - minio-1.minio-hl.minio.svc.cluster.local
     - minio-2.minio-hl.minio.svc.cluster.local
     - minio-3.minio-hl.minio.svc.cluster.local
+    # etcd services
+    - etcd.etcd.svc.cluster.local
+    - etcd-headless.etcd.svc.cluster.local
+    - etcd-0.etcd-headless.etcd.svc.cluster.local
+    - etcd-1.etcd-headless.etcd.svc.cluster.local
+    - etcd-2.etcd-headless.etcd.svc.cluster.local
+    # Generic names
     - minio
+    - etcd
     - localhost
     - '*.minio.svc.cluster.local'
+    - '*.etcd.svc.cluster.local'
   duration: 2160h
   ipAddresses:
     - 127.0.0.1
@@ -29,9 +39,9 @@ spec:
   secretName: minio-internal-tls
   subject:
     organizations:
-      - MinIO
+      - Infrastructure
     organizationalUnits:
-      - MinIO Internal TLS
+      - Internal TLS
   usages:
     - digital signature
     - key encipherment
