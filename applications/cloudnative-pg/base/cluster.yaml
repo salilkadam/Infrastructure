@@ -1,0 +1,72 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+    app.kubernetes.io/component: database
+spec:
+  # PostgreSQL version
+  imageName: ghcr.io/cloudnative-pg/postgresql:15.6
+  
+  # Number of instances (1 for dev, can be scaled up for prod)
+  instances: 1
+  
+  # Storage configuration
+  storage:
+    size: 10Gi
+    storageClass: nfs-client
+  
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: pg-app
+        key: password
+  
+  # PostgreSQL configuration
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      maintenance_work_mem: "64MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      min_wal_size: "1GB"
+      max_wal_size: "4GB"
+      max_worker_processes: "8"
+      max_parallel_workers_per_gather: "4"
+      max_parallel_workers: "8"
+      max_parallel_maintenance_workers: "4"
+  
+  # Monitoring configuration
+  monitoring:
+    enablePodMonitor: true
+  
+  # Node affinity for resource management
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - ubuntu
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi" 

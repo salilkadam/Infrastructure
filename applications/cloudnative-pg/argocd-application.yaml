@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: postgresql
+  name: cloudnative-pg
   namespace: argocd
   labels:
-    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/name: cloudnative-pg
     app.kubernetes.io/part-of: infrastructure
 spec:
   project: default
   source:
     repoURL: https://github.com/salilkadam/Infrastructure.git
     targetRevision: HEAD
-    path: applications/postgresql/overlays/dev
+    path: applications/cloudnative-pg/overlays/dev
   destination:
     server: https://kubernetes.default.svc
     namespace: postgres
