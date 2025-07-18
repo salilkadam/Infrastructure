@@ -8,26 +8,16 @@ metadata:
     app.kubernetes.io/part-of: milvus
 data:
   milvus.yaml: |
-    # etcd configuration
     etcd:
       endpoints:
         - http://etcd.etcd.svc.cluster.local:2379
+      rootPath: milvus-dev
+      auth:
+        enabled: true
+        userName: "root"
+        password: "cBRpu8mLEk"
       ssl:
         enabled: false
-      username: "root"
-      password: "cBRpu8mLEk"
-    metastore:
-      type: etcd
-
-    # Message queue configuration (Pulsar for distributed mode)
-    mq:
-      type: pulsar
-      pulsar:
-        address: "pulsar://pulsar-service:6650"
-        webAddress: "http://pulsar-service:8080"
-        maxMessageSize: 5242880
-
-    # S3/MinIO configuration
     minio:
       address: minio-api.minio.svc.cluster.local
       port: 9000
@@ -36,9 +26,12 @@ data:
       useSSL: true
       bucketName: milvus
       rootPath: file
-      useIAM: false
-      cloudProvider: 
-      iamEndpoint: 
+    mq:
+      type: pulsar
+      pulsar:
+        address: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
+        webAddress: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        maxMessageSize: 5242880
 
     # Data coordinator
     dataCoord:
