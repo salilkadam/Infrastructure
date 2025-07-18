@@ -51,17 +51,12 @@ spec:
       - name: pulsar
         image: apachepulsar/pulsar:3.0.0
         command: ["/bin/bash"]
-        args: ["-c", "export PULSAR_MEM=512m && bin/pulsar standalone --no-functions-worker"]
+        args: ["-c", "bin/pulsar standalone --no-functions-worker"]
         ports:
         - containerPort: 6650
           name: pulsar
         - containerPort: 8080
           name: pulsar-admin
-        env:
-        - name: PULSAR_GC
-          value: "-XX:+UseG1GC"
-        - name: PULSAR_EXTRA_OPTS
-          value: "-Dpulsar.allocator.leak_detection=Advanced"
         resources:
           requests:
             memory: "1Gi"
