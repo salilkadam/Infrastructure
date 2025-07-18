@@ -12,8 +12,6 @@ data:
   POSTGRES_PASSWORD: "milvus_password"
   POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
   POSTGRES_SHARED_PRELOAD_LIBRARIES: "pg_stat_statements"
-  
-  # PostgreSQL configuration
   postgresql.conf: |
     # Connection settings
     listen_addresses = '*'
@@ -24,11 +22,12 @@ data:
     shared_buffers = 256MB
     effective_cache_size = 1GB
     maintenance_work_mem = 64MB
-    checkpoint_completion_target = 0.9
+    work_mem = 4MB
     
     # WAL settings
     wal_buffers = 16MB
-    checkpoint_segments = 32
+    checkpoint_completion_target = 0.9
+    wal_writer_delay = 200ms
     
     # Query planner settings
     random_page_cost = 1.1
@@ -50,19 +49,12 @@ data:
     log_autovacuum_min_duration = 0
     log_error_verbosity = verbose
     
-    # Autovacuum settings
+    # Autovacuum
     autovacuum = on
     autovacuum_max_workers = 3
     autovacuum_naptime = 1min
     
-    # Statistics
-    track_activities = on
-    track_counts = on
-    track_io_timing = on
-    track_functions = all
-    track_activity_query_size = 1024
-    
-    # pgAdmin settings
+    # Extensions
     shared_preload_libraries = 'pg_stat_statements'
     pg_stat_statements.track = all
     pg_stat_statements.max = 10000 

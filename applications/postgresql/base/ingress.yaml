@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: pgadmin-ingress
+  name: postgres-admin-ingress
   namespace: postgres
   labels:
     app.kubernetes.io/name: postgresql
@@ -21,7 +21,7 @@ spec:
   tls:
   - hosts:
     - pg.askcollections.com
-    secretName: pgadmin-tls
+    secretName: postgres-admin-tls
   rules:
   - host: pg.askcollections.com
     http:
@@ -30,6 +30,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: pgadmin
+            name: postgres-admin
             port:
               number: 80 

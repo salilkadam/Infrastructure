@@ -68,7 +68,7 @@ spec:
             memory: "1Gi"
             cpu: "500m"
         volumeMounts:
-        - name: pg-data
+        - name: postgresql-data
           mountPath: /var/lib/postgresql/data
         - name: postgresql-config
           mountPath: /etc/postgresql/postgresql.conf
@@ -103,10 +103,9 @@ spec:
           name: postgresql-config
   volumeClaimTemplates:
   - metadata:
-      name: pg-data
+      name: postgresql-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 20Gi
-      storageClassName: nfs-client 
+          storage: 10Gi 

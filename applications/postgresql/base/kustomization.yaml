@@ -8,10 +8,9 @@ resources:
 - namespace.yaml
 - configmap.yaml
 - statefulset.yaml
-- pgadmin.yaml
 - services.yaml
+- admin.yaml
 - ingress.yaml
-- init-job.yaml
 
 commonLabels:
   app.kubernetes.io/name: postgresql
