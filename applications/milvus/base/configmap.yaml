@@ -32,6 +32,10 @@ data:
         address: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         webAddress: "http://pulsar-service.pulsar.svc.cluster.local:8080"
         maxMessageSize: 5242880
+        authPlugin: ""
+        authParams: ""
+        tenant: ""
+        namespace: ""
 
     # Data coordinator
     dataCoord:
