@@ -14,8 +14,8 @@ data:
         - http://etcd.etcd.svc.cluster.local:2379
       ssl:
         enabled: false
-      username: ""
-      password: ""
+      username: "root"
+      password: "cBRpu8mLEk"
     metastore:
       type: etcd
 
