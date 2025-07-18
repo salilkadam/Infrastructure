@@ -25,7 +25,6 @@ spec:
       owner: postgres
       secret:
         name: pg-app
-        key: password
   
   # PostgreSQL configuration
   postgresql:
