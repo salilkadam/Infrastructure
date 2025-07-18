@@ -60,6 +60,10 @@ spec:
             configMapKeyRef:
               name: postgresql-config
               key: POSTGRES_SHARED_PRELOAD_LIBRARIES
+        - name: POSTGRES_CONFIG_FILE
+          value: "/etc/postgresql/postgresql.conf"
+        - name: POSTGRES_HBA_FILE
+          value: "/etc/postgresql/pg_hba.conf"
         resources:
           requests:
             memory: "512Mi"
@@ -73,6 +77,9 @@ spec:
         - name: postgresql-config
           mountPath: /etc/postgresql/postgresql.conf
           subPath: postgresql.conf
+        - name: postgresql-config
+          mountPath: /etc/postgresql/pg_hba.conf
+          subPath: pg_hba.conf
         livenessProbe:
           exec:
             command:

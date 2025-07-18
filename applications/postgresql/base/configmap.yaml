@@ -18,6 +18,9 @@ data:
     port = 5432
     max_connections = 100
     
+    # Allow all connections from Kubernetes cluster
+    # This will be overridden by pg_hba.conf
+    
     # Memory settings
     shared_buffers = 256MB
     effective_cache_size = 1GB
@@ -57,4 +60,16 @@ data:
     # Extensions
     shared_preload_libraries = 'pg_stat_statements'
     pg_stat_statements.track = all
-    pg_stat_statements.max = 10000 
+    pg_stat_statements.max = 10000
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    # "local" is for Unix domain socket connections only
+    local   all             all                                     trust
+    # IPv4 local connections:
+    host    all             all             127.0.0.1/32            trust
+    # IPv6 local connections:
+    host    all             all             ::1/128                 trust
+    # Allow connections from Kubernetes cluster (10.42.0.0/16)
+    host    all             all             10.42.0.0/16            md5
+    # Allow connections from all other hosts
+    host    all             all             0.0.0.0/0               md5 
