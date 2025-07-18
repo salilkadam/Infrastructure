@@ -547,6 +547,8 @@ spec:
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
         - name: MQ_TYPE
           value: "pulsar"
+        - name: QUERY_NODE_LOCAL_STORAGE_PATH
+          value: "/var/lib/milvus"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
