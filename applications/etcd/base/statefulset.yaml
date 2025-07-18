@@ -32,6 +32,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_STS_NAME
+              value: etcd
             - name: ETCD_NAME
               value: "$(MY_POD_NAME)"
             - name: ETCD_DATA_DIR
@@ -113,6 +115,8 @@ spec:
               mountPath: /bitnami/etcd
             - name: etcd-secrets
               mountPath: /opt/bitnami/etcd/secrets
+            - name: tmp
+              mountPath: /tmp
       securityContext:
         fsGroup: 1001
         fsGroupChangePolicy: Always
@@ -121,6 +125,8 @@ spec:
         - name: etcd-secrets
           secret:
             secretName: etcd
+        - name: tmp
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: data
