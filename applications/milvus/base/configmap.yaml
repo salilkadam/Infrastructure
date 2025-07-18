@@ -23,7 +23,7 @@ data:
       port: 9000
       accessKeyID: "minioadmin"
       secretAccessKey: "minioadmin"
-      useSSL: true
+      useSSL: false
       bucketName: milvus
       rootPath: file
     mq:
