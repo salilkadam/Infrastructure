@@ -4,7 +4,7 @@ kind: Kustomization
 metadata:
   name: postgresql-prod
 
-namespace: postgresql
+namespace: postgres
 
 resources:
 - ../../base
