@@ -51,6 +51,10 @@ spec:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
           subPath: milvus.yaml
+        - name: minio-ca-cert
+          mountPath: /etc/ssl/certs/minio-ca.crt
+          subPath: ca.crt
+          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -62,6 +66,9 @@ spec:
       - name: milvus-config
         configMap:
           name: milvus-config
+      - name: minio-ca-cert
+        secret:
+          secretName: minio-ca-cert
 ---
 # Milvus Root Coordinator StatefulSet
 apiVersion: apps/v1
@@ -183,6 +190,10 @@ spec:
           subPath: milvus.yaml
         - name: milvus-data
           mountPath: /var/lib/milvus
+        - name: minio-ca-cert
+          mountPath: /etc/ssl/certs/minio-ca.crt
+          subPath: ca.crt
+          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -196,6 +207,9 @@ spec:
           name: milvus-config
       - name: milvus-data
         emptyDir: {}
+      - name: minio-ca-cert
+        secret:
+          secretName: minio-ca-cert
 ---
 # Milvus Index Coordinator StatefulSet
 apiVersion: apps/v1
@@ -384,6 +398,10 @@ spec:
           subPath: milvus.yaml
         - name: milvus-data
           mountPath: /var/lib/milvus
+        - name: minio-ca-cert
+          mountPath: /etc/ssl/certs/minio-ca.crt
+          subPath: ca.crt
+          readOnly: true
         resources:
           requests:
             memory: "512Mi"
@@ -397,6 +415,9 @@ spec:
           name: milvus-config
       - name: milvus-data
         emptyDir: {}
+      - name: minio-ca-cert
+        secret:
+          secretName: minio-ca-cert
 ---
 # Milvus Index Node StatefulSet
 apiVersion: apps/v1
@@ -518,6 +539,10 @@ spec:
           subPath: milvus.yaml
         - name: milvus-data
           mountPath: /var/lib/milvus
+        - name: minio-ca-cert
+          mountPath: /etc/ssl/certs/minio-ca.crt
+          subPath: ca.crt
+          readOnly: true
         resources:
           requests:
             memory: "512Mi"
@@ -530,4 +555,7 @@ spec:
         configMap:
           name: milvus-config
       - name: milvus-data
-        emptyDir: {} 
+        emptyDir: {}
+      - name: minio-ca-cert
+        secret:
+          secretName: minio-ca-cert 
