@@ -28,6 +28,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: pg-pgadmin4
+            name: adminer
             port:
               number: 80 
