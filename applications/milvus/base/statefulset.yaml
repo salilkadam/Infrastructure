@@ -41,6 +41,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -98,6 +108,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -159,6 +179,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -220,6 +250,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -281,6 +321,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -342,6 +392,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -403,6 +463,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -464,6 +534,16 @@ spec:
             secretKeyRef:
               name: milvus-minio-credentials
               key: secretkey
+        - name: ETCD_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: username
+        - name: ETCD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: milvus-etcd-credentials
+              key: password
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
