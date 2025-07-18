@@ -31,7 +31,7 @@ patches:
       value: 1
 - target:
     kind: Deployment
-    name: pgadmin
+    name: postgres-admin
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
