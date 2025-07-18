@@ -38,8 +38,6 @@ spec:
           value: "postgresql.postgres.svc.cluster.local"
         - name: ADMINER_DESIGN
           value: "pepa-linha-dark"
-        - name: ADMINER_PLUGINS
-          value: "login-servers"
         resources:
           requests:
             memory: "64Mi"
