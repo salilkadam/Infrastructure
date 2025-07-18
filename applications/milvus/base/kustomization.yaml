@@ -10,7 +10,7 @@ resources:
   - secret-etcd-credentials.yaml
   - configmap.yaml
   - service.yaml
-  - statefulset.yaml
+  - deployment.yaml
 
 commonLabels:
   app.kubernetes.io/name: milvus

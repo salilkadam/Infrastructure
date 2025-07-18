@@ -1,0 +1,61 @@
+# Milvus Standalone Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus-standalone
+  namespace: milvus
+  labels:
+    app.kubernetes.io/name: milvus
+    app.kubernetes.io/component: standalone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: milvus
+      app.kubernetes.io/component: standalone
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: milvus
+        app.kubernetes.io/component: standalone
+    spec:
+      containers:
+      - name: milvus-standalone
+        image: milvusdb/milvus:v2.4.0
+        command: ["milvus"]
+        args: ["run", "standalone"]
+        ports:
+        - containerPort: 19530
+          name: grpc
+        - containerPort: 19121
+          name: http
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: milvus-minio-credentials
+              key: accesskey
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: milvus-minio-credentials
+              key: secretkey
+        volumeMounts:
+        - name: milvus-config
+          mountPath: /milvus/configs/milvus.yaml
+          subPath: milvus.yaml
+        - name: milvus-data
+          mountPath: /var/lib/milvus
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: milvus-config
+        configMap:
+          name: milvus-config
+      - name: milvus-data
+        emptyDir: {} 

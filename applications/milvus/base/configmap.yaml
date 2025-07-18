@@ -14,10 +14,16 @@ data:
         - http://etcd.etcd.svc.cluster.local:2379
       ssl:
         enabled: false
-      username: "{{ ETCD_USERNAME }}"
-      password: "{{ ETCD_PASSWORD }}"
+      username: ""
+      password: ""
     metastore:
       type: etcd
+
+    # Message queue configuration (RocksMQ - built-in)
+    mq:
+      type: rocksmq
+      rocksmq:
+        path: "/var/lib/milvus/rocksmq"
 
     # S3/MinIO configuration
     minio:

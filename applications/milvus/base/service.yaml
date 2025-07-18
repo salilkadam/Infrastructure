@@ -17,7 +17,7 @@ spec:
     - port: 19121
       name: http
 ---
-# External service for Milvus proxy
+# External service for Milvus standalone
 apiVersion: v1
 kind: Service
 metadata:
@@ -25,12 +25,12 @@ metadata:
   namespace: milvus
   labels:
     app.kubernetes.io/name: milvus
-    app.kubernetes.io/component: proxy
+    app.kubernetes.io/component: standalone
 spec:
   type: NodePort
   selector:
     app.kubernetes.io/name: milvus
-    app.kubernetes.io/component: proxy
+    app.kubernetes.io/component: standalone
   ports:
     - port: 19530
       targetPort: 19530
