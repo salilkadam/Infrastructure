@@ -50,8 +50,8 @@ spec:
               value: "no"
             - name: ETCD_DISASTER_RECOVERY
               value: "no"
-            - name: ETCD_AUTH_TOKEN
-              value: "jwt,priv-key=/opt/bitnami/etcd/certs/token/jwt-token.pem,sign-method=RS256,ttl=10m"
+            # - name: ETCD_AUTH_TOKEN
+            #   value: "jwt,priv-key=/opt/bitnami/etcd/certs/token/jwt-token.pem,sign-method=RS256,ttl=10m"
             # TLS Configuration
             - name: ETCD_CLIENT_CERT_AUTH
               value: "true"
