@@ -45,6 +45,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -106,6 +108,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -171,6 +175,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -236,6 +242,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -301,6 +309,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -366,6 +376,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -431,6 +443,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
@@ -496,6 +510,8 @@ spec:
           value: "pulsar://pulsar-service.pulsar.svc.cluster.local:6650"
         - name: PULSAR_WEB_ADDRESS
           value: "http://pulsar-service.pulsar.svc.cluster.local:8080"
+        - name: MQ_TYPE
+          value: "pulsar"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
