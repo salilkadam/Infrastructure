@@ -52,37 +52,37 @@ spec:
               value: "no"
             # - name: ETCD_AUTH_TOKEN
             #   value: "jwt,priv-key=/opt/bitnami/etcd/certs/token/jwt-token.pem,sign-method=RS256,ttl=10m"
-            # TLS Configuration
-            - name: ETCD_CLIENT_CERT_AUTH
-              value: "true"
-            - name: ETCD_PEER_CLIENT_CERT_AUTH
-              value: "true"
-            - name: ETCD_CERT_FILE
-              value: "/opt/bitnami/etcd/certs/tls.crt"
-            - name: ETCD_KEY_FILE
-              value: "/opt/bitnami/etcd/certs/tls.key"
-            - name: ETCD_TRUSTED_CA_FILE
-              value: "/opt/bitnami/etcd/certs/ca.crt"
-            - name: ETCD_PEER_CERT_FILE
-              value: "/opt/bitnami/etcd/certs/tls.crt"
-            - name: ETCD_PEER_KEY_FILE
-              value: "/opt/bitnami/etcd/certs/tls.key"
-            - name: ETCD_PEER_TRUSTED_CA_FILE
-              value: "/opt/bitnami/etcd/certs/ca.crt"
-            # Client URLs with TLS
+            # TLS Configuration (temporarily disabled)
+            # - name: ETCD_CLIENT_CERT_AUTH
+            #   value: "true"
+            # - name: ETCD_PEER_CLIENT_CERT_AUTH
+            #   value: "true"
+            # - name: ETCD_CERT_FILE
+            #   value: "/opt/bitnami/etcd/certs/tls.crt"
+            # - name: ETCD_KEY_FILE
+            #   value: "/opt/bitnami/etcd/certs/tls.key"
+            # - name: ETCD_TRUSTED_CA_FILE
+            #   value: "/opt/bitnami/etcd/certs/ca.crt"
+            # - name: ETCD_PEER_CERT_FILE
+            #   value: "/opt/bitnami/etcd/certs/tls.crt"
+            # - name: ETCD_PEER_KEY_FILE
+            #   value: "/opt/bitnami/etcd/certs/tls.key"
+            # - name: ETCD_PEER_TRUSTED_CA_FILE
+            #   value: "/opt/bitnami/etcd/certs/ca.crt"
+            # Client URLs with HTTP (temporarily)
             - name: ETCD_ADVERTISE_CLIENT_URLS
-              value: "https://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2379,https://etcd.etcd.svc.cluster.local:2379"
+              value: "http://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2379,http://etcd.etcd.svc.cluster.local:2379"
             - name: ETCD_LISTEN_CLIENT_URLS
-              value: "https://0.0.0.0:2379"
-            # Peer URLs with TLS
+              value: "http://0.0.0.0:2379"
+            # Peer URLs with HTTP (temporarily)
             - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-              value: "https://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2380"
+              value: "http://$(MY_POD_NAME).etcd-headless.etcd.svc.cluster.local:2380"
             - name: ETCD_LISTEN_PEER_URLS
-              value: "https://0.0.0.0:2380"
+              value: "http://0.0.0.0:2380"
             - name: ETCD_INITIAL_CLUSTER_TOKEN
               value: etcd-cluster-k8s
             - name: ETCD_INITIAL_CLUSTER
-              value: "etcd-0=https://etcd-0.etcd-headless.etcd.svc.cluster.local:2380,etcd-1=https://etcd-1.etcd-headless.etcd.svc.cluster.local:2380,etcd-2=https://etcd-2.etcd-headless.etcd.svc.cluster.local:2380"
+              value: "etcd-0=http://etcd-0.etcd-headless.etcd.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd-headless.etcd.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd-headless.etcd.svc.cluster.local:2380"
             - name: ETCD_CLUSTER_DOMAIN
               value: etcd-headless.etcd.svc.cluster.local
           ports:
@@ -94,7 +94,7 @@ spec:
             httpGet:
               path: /livez
               port: 2379
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
