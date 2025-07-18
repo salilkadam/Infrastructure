@@ -549,6 +549,10 @@ spec:
           value: "pulsar"
         - name: QUERY_NODE_LOCAL_STORAGE_PATH
           value: "/var/lib/milvus"
+        - name: QUERYNODE_LOCAL_STORAGE_PATH
+          value: "/var/lib/milvus"
+        - name: LOCAL_STORAGE_PATH
+          value: "/var/lib/milvus"
         volumeMounts:
         - name: milvus-config
           mountPath: /milvus/configs/milvus.yaml
