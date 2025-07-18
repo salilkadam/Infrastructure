@@ -1,0 +1,71 @@
+# Pulsar Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: milvus
+---
+# Pulsar Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsar-service
+  namespace: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: milvus
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pulsar
+  ports:
+    - port: 6650
+      targetPort: 6650
+      name: pulsar
+    - port: 8080
+      targetPort: 8080
+      name: pulsar-admin
+---
+# Pulsar Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-standalone
+  namespace: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: milvus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pulsar
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pulsar
+    spec:
+      containers:
+      - name: pulsar
+        image: apachepulsar/pulsar:3.0.0
+        command: ["/bin/bash"]
+        args: ["-c", "bin/pulsar standalone"]
+        ports:
+        - containerPort: 6650
+          name: pulsar
+        - containerPort: 8080
+          name: pulsar-admin
+        env:
+        - name: PULSAR_MEM
+          value: "512m"
+        - name: PULSAR_GC
+          value: "-XX:+UseG1GC"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m" 

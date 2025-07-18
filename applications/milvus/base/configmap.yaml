@@ -19,11 +19,13 @@ data:
     metastore:
       type: etcd
 
-    # Message queue configuration (RocksMQ - built-in)
+    # Message queue configuration (Pulsar for distributed mode)
     mq:
-      type: rocksmq
-      rocksmq:
-        path: "/var/lib/milvus/rocksmq"
+      type: pulsar
+      pulsar:
+        address: "pulsar://pulsar-service:6650"
+        webAddress: "http://pulsar-service:8080"
+        maxMessageSize: 5242880
 
     # S3/MinIO configuration
     minio:
