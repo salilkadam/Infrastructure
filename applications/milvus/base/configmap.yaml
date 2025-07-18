@@ -21,8 +21,8 @@ data:
     minio:
       address: minio-api.minio.svc.cluster.local
       port: 9000
-      accessKeyID: "{{ MINIO_ACCESS_KEY }}"
-      secretAccessKey: "{{ MINIO_SECRET_KEY }}"
+      accessKeyID: "minioadmin"
+      secretAccessKey: "minioadmin"
       useSSL: true
       bucketName: milvus
       rootPath: file
