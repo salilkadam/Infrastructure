@@ -28,11 +28,18 @@ spec:
                 operator: In
                 values:
                 - ubuntu
+      initContainers:
+      - name: init-config
+        image: postgres:15-alpine
+        command: ['sh', '-c', 'cp /etc/postgresql/*.conf /var/lib/postgresql/data/']
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgresql-config
+          mountPath: /etc/postgresql
       containers:
       - name: postgresql
         image: postgres:15-alpine
-        command: ["postgres"]
-        args: ["-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
         ports:
         - containerPort: 5432
           name: postgresql
@@ -62,10 +69,7 @@ spec:
             configMapKeyRef:
               name: postgresql-config
               key: POSTGRES_SHARED_PRELOAD_LIBRARIES
-        - name: POSTGRES_CONFIG_FILE
-          value: "/etc/postgresql/postgresql.conf"
-        - name: POSTGRES_HBA_FILE
-          value: "/etc/postgresql/pg_hba.conf"
+
         resources:
           requests:
             memory: "512Mi"
