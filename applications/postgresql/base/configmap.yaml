@@ -7,9 +7,9 @@ metadata:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/component: config
 data:
-  POSTGRES_DB: "milvus_metadata"
-  POSTGRES_USER: "milvus_user"
-  POSTGRES_PASSWORD: "milvus_password"
+  POSTGRES_DB: "postgres"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres_password"
   POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
   POSTGRES_SHARED_PRELOAD_LIBRARIES: "pg_stat_statements"
   postgresql.conf: |

@@ -36,6 +36,8 @@ spec:
         env:
         - name: ADMINER_DEFAULT_SERVER
           value: "postgresql.postgres.svc.cluster.local"
+        - name: ADMINER_DEFAULT_DB
+          value: "postgres"
         - name: ADMINER_DESIGN
           value: "pepa-linha-dark"
         resources:
