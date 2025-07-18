@@ -413,11 +413,18 @@ spec:
       - name: milvus-config
         configMap:
           name: milvus-config
-      - name: milvus-data
-        emptyDir: {}
       - name: minio-ca-cert
         secret:
           secretName: minio-ca-cert
+  volumeClaimTemplates:
+    - metadata:
+        name: milvus-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: nfs-client
+        resources:
+          requests:
+            storage: 10Gi
 ---
 # Milvus Index Node StatefulSet
 apiVersion: apps/v1
@@ -483,8 +490,15 @@ spec:
       - name: milvus-config
         configMap:
           name: milvus-config
-      - name: milvus-data
-        emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: milvus-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: nfs-client
+        resources:
+          requests:
+            storage: 10Gi
 ---
 # Milvus Query Node StatefulSet
 apiVersion: apps/v1
@@ -554,8 +568,15 @@ spec:
       - name: milvus-config
         configMap:
           name: milvus-config
-      - name: milvus-data
-        emptyDir: {}
       - name: minio-ca-cert
         secret:
-          secretName: minio-ca-cert 
+          secretName: minio-ca-cert
+  volumeClaimTemplates:
+    - metadata:
+        name: milvus-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: nfs-client
+        resources:
+          requests:
+            storage: 10Gi 
