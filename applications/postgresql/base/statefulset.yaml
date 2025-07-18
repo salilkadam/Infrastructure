@@ -31,6 +31,8 @@ spec:
       containers:
       - name: postgresql
         image: postgres:15-alpine
+        command: ["postgres"]
+        args: ["-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
         ports:
         - containerPort: 5432
           name: postgresql
