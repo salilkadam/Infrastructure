@@ -31,7 +31,7 @@ patches:
       value: "500m"
 - target:
     kind: Deployment
-    name: pgadmin
+    name: adminer
   patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/resources/requests/memory
