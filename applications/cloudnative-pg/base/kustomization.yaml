@@ -6,6 +6,7 @@ metadata:
 
 resources:
 - namespace.yaml
+- operator.yaml
 - secret.yaml
 - cluster.yaml
 - adminer.yaml
