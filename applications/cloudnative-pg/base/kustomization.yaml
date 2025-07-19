@@ -8,7 +8,7 @@ resources:
 - namespace.yaml
 - secret.yaml
 - cluster.yaml
-- pgadmin.yaml
+- adminer.yaml
 - ingress.yaml
 
 commonLabels:
