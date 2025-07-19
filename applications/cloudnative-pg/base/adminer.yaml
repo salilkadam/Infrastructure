@@ -79,4 +79,5 @@ spec:
     name: http
   selector:
     app.kubernetes.io/name: cloudnative-pg
-    app.kubernetes.io/component: admin 
+    app.kubernetes.io/component: admin
+    app.kubernetes.io/part-of: infrastructure 
