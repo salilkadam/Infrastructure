@@ -17,6 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: cloudnative-pg
         app.kubernetes.io/component: admin
+        app.kubernetes.io/part-of: infrastructure
     spec:
       affinity:
         nodeAffinity:
