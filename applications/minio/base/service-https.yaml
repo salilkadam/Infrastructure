@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-api-https
+  namespace: minio
+spec:
+  type: ClusterIP
+  ports:
+    - name: api-https
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: minio 

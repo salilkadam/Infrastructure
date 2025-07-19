@@ -14,7 +14,6 @@ spec:
     - minio-0.minio-hl.minio.svc.cluster.local
     - minio-1.minio-hl.minio.svc.cluster.local
     - minio-2.minio-hl.minio.svc.cluster.local
-    - minio-3.minio-hl.minio.svc.cluster.local
     # etcd services
     - etcd.etcd.svc.cluster.local
     - etcd-headless.etcd.svc.cluster.local

@@ -7,8 +7,10 @@ resources:
   - statefulset.yaml
   - service-hl.yaml
   - service.yaml
+  - service-https.yaml
   - service-console.yaml
   - ingress.yaml
+  - ingress-https.yaml
   - cert-clusterissuer-selfsigned.yaml
   - cert-ca-issuer.yaml
   - cert-internal-ca.yaml
