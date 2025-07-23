@@ -22,12 +22,14 @@ spec:
       - name: dev-environment
         image: python:3.11-slim
         command: ["/bin/bash"]
-        args: ["-c", "apt-get update && apt-get install -y curl wget git vim nano && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && pip install psycopg2-binary redis minio boto3 && npm install -g yarn && tail -f /dev/null"]
+        args: ["-c", "apt-get update && apt-get install -y curl wget git vim nano openssh-server && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && pip install psycopg2-binary redis minio boto3 && npm install -g yarn && mkdir -p /root/.ssh && cp /var/run/secrets/kubernetes.io/ssh-keys/id_rsa.pub /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && chmod 700 /root/.ssh && service ssh start && tail -f /dev/null"]
         ports:
         - containerPort: 3000
           name: node
         - containerPort: 8000
           name: python
+        - containerPort: 22
+          name: ssh
         env:
         - name: POSTGRES_HOST
           value: "pg-rw.postgres.svc.cluster.local"
@@ -62,7 +64,7 @@ spec:
         - name: dev-workspace
           mountPath: /workspace
         - name: ssh-keys
-          mountPath: /root/.ssh
+          mountPath: /var/run/secrets/kubernetes.io/ssh-keys
           readOnly: true
       volumes:
       - name: dev-workspace

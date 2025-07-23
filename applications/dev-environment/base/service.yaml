@@ -17,6 +17,10 @@ spec:
     targetPort: 8000
     protocol: TCP
     name: python
+  - port: 22
+    targetPort: 22
+    protocol: TCP
+    name: ssh
   selector:
     app.kubernetes.io/name: dev-environment
     app.kubernetes.io/component: development 
