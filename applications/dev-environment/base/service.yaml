@@ -21,7 +21,7 @@ spec:
     targetPort: 22
     protocol: TCP
     name: ssh
-    nodePort: 3222
+    nodePort: 30222
   selector:
     app.kubernetes.io/name: dev-environment
     app.kubernetes.io/component: development 
