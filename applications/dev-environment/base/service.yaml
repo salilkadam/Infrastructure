@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: dev-environment
     app.kubernetes.io/component: development
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 3000
     targetPort: 3000
@@ -21,6 +21,7 @@ spec:
     targetPort: 22
     protocol: TCP
     name: ssh
+    nodePort: 3222
   selector:
     app.kubernetes.io/name: dev-environment
     app.kubernetes.io/component: development 
