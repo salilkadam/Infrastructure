@@ -1,0 +1,209 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: infrastructure
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /etc/grafana/provisioning/dashboards
+
+  infrastructure-overview.json: |
+    {
+      "id": null,
+      "title": "Infrastructure Overview",
+        "tags": ["infrastructure", "overview"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Node CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Node Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "Pod Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "count(kube_pod_status_phase)",
+                "legendFormat": "Total Pods"
+              }
+            ],
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8}
+          },
+          {
+            "id": 4,
+            "title": "Running Pods",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "count(kube_pod_status_phase{phase=\"Running\"})",
+                "legendFormat": "Running"
+              }
+            ],
+            "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }
+
+  milvus-dashboard.json: |
+    {
+      "id": null,
+      "title": "Milvus Monitoring",
+        "tags": ["milvus", "vector-database"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Milvus Pod Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "up{job=\"milvus\"}",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "gridPos": {"h": 4, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Milvus Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{container=~\"milvus.*\"} / container_spec_memory_limit_bytes{container=~\"milvus.*\"} * 100",
+                "legendFormat": "{{container}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+          },
+          {
+            "id": 3,
+            "title": "Milvus CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{container=~\"milvus.*\"}[5m]) * 100",
+                "legendFormat": "{{container}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }
+
+  postgresql-dashboard.json: |
+    {
+      "id": null,
+      "title": "PostgreSQL Monitoring",
+        "tags": ["postgresql", "database"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "PostgreSQL Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends",
+                "legendFormat": "{{datname}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "PostgreSQL Transactions",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit[5m])",
+                "legendFormat": "Commits - {{datname}}"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback[5m])",
+                "legendFormat": "Rollbacks - {{datname}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    }
+
+  minio-dashboard.json: |
+    {
+      "id": null,
+      "title": "MinIO Monitoring",
+        "tags": ["minio", "storage"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "MinIO Bucket Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "minio_bucket_usage_object_total",
+                "legendFormat": "{{bucket}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "MinIO Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(minio_requests_total[5m])",
+                "legendFormat": "{{method}}"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          }
+        ],
+        "time": {"from": "now-1h", "to": "now"},
+        "refresh": "30s"
+      }
+    } 

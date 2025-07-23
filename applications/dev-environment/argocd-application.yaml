@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-environment
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: dev-environment
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salilkadam/Infrastructure.git
+    targetRevision: HEAD
+    path: applications/dev-environment/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev-environment
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+  revisionHistoryLimit: 10 

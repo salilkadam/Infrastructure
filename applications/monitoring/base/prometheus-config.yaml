@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: prometheus-config
   namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: infrastructure
 data:
   prometheus.yml: |
     global:
@@ -10,48 +13,48 @@ data:
       evaluation_interval: 15s
 
     rule_files:
-      - "milvus_rules.yml"
+      - "alert_rules.yml"
 
     scrape_configs:
-      # Milvus metrics
-      - job_name: 'milvus'
+      # Prometheus itself
+      - job_name: 'prometheus'
         static_configs:
-          - targets: 
-            - 'milvus-proxy.milvus.svc.cluster.local:9091'
-            - 'milvus-data-coordinator.milvus.svc.cluster.local:9091'
-            - 'milvus-index-coordinator.milvus.svc.cluster.local:9091'
-            - 'milvus-query-coordinator.milvus.svc.cluster.local:9091'
-            - 'milvus-root-coordinator.milvus.svc.cluster.local:9091'
-        metrics_path: /metrics
-        scrape_interval: 10s
+          - targets: ['localhost:9090']
 
-      # MinIO metrics
-      - job_name: 'minio'
+      # Kubernetes API server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubernetes nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # Node Exporter
+      - job_name: 'node-exporter'
         static_configs:
-          - targets: ['minio-api.minio.svc.cluster.local:9000']
-        metrics_path: /minio/v2/metrics/cluster
+          - targets: ['node-exporter.monitoring.svc.cluster.local:9100']
         scrape_interval: 30s
 
-      # etcd metrics
-      - job_name: 'etcd'
-        static_configs:
-          - targets: 
-            - 'etcd-0.etcd-headless.etcd.svc.cluster.local:2379'
-            - 'etcd-1.etcd-headless.etcd.svc.cluster.local:2379'
-            - 'etcd-2.etcd-headless.etcd.svc.cluster.local:2379'
-            - 'etcd-3.etcd-headless.etcd.svc.cluster.local:2379'
-            - 'etcd-4.etcd-headless.etcd.svc.cluster.local:2379'
-        metrics_path: /metrics
-        scrape_interval: 30s
-
-      # Pulsar metrics
-      - job_name: 'pulsar'
-        static_configs:
-          - targets: ['pulsar-service.pulsar.svc.cluster.local:8080']
-        metrics_path: /metrics
-        scrape_interval: 30s
-
-      # Kubernetes metrics
+      # Kubernetes pods
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
           - role: pod
@@ -68,12 +71,132 @@ data:
             regex: ([^:]+)(?::\d+)?;(\d+)
             replacement: $1:$2
             target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 
-  milvus_rules.yml: |
+      # Milvus metrics - Fixed to use correct service endpoints
+      - job_name: 'milvus'
+        static_configs:
+          - targets: 
+            - 'milvus-proxy.milvus.svc.cluster.local:9091'
+        metrics_path: /metrics
+        scrape_interval: 10s
+
+      # MinIO metrics - Fixed to use HTTPS and proper path
+      - job_name: 'minio'
+        static_configs:
+          - targets: ['minio-api.minio.svc.cluster.local:9000']
+        metrics_path: /minio/v2/metrics/cluster
+        scheme: https
+        tls_config:
+          insecure_skip_verify: true
+        basic_auth:
+          username: minioadmin
+          password: minioadmin
+        scrape_interval: 30s
+
+      # PostgreSQL metrics - CloudNativePG built-in metrics
+      - job_name: 'postgresql'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace]
+            action: keep
+            regex: postgres
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: keep
+            regex: pg-1
+          - source_labels: [__meta_kubernetes_pod_ip]
+            action: replace
+            target_label: __address__
+            replacement: $1:9187
+        metrics_path: /metrics
+        scrape_interval: 30s
+
+      # etcd metrics - Fixed to use only existing pods
+      - job_name: 'etcd'
+        static_configs:
+          - targets: 
+            - 'etcd-0.etcd-headless.etcd.svc.cluster.local:2379'
+            - 'etcd-1.etcd-headless.etcd.svc.cluster.local:2379'
+            - 'etcd-2.etcd-headless.etcd.svc.cluster.local:2379'
+        metrics_path: /metrics
+        scrape_interval: 30s
+
+      # Pulsar metrics
+      - job_name: 'pulsar'
+        static_configs:
+          - targets: ['pulsar-service.pulsar.svc.cluster.local:8080']
+        metrics_path: /metrics
+        scrape_interval: 30s
+
+      # ArgoCD metrics
+      - job_name: 'argocd'
+        static_configs:
+          - targets: ['argocd-server.argocd.svc.cluster.local:8080']
+        metrics_path: /metrics
+        scrape_interval: 30s
+
+      # Adminer (basic health check)
+      - job_name: 'adminer'
+        static_configs:
+          - targets: ['adminer.postgres.svc.cluster.local:80']
+        metrics_path: /
+        scrape_interval: 60s
+
+  alert_rules.yml: |
     groups:
+      - name: infrastructure
+        rules:
+          # Node high CPU usage
+          - alert: NodeHighCPUUsage
+            expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU usage on {{ $labels.instance }}"
+              description: "CPU usage is {{ $value }}%"
+
+          # Node high memory usage
+          - alert: NodeHighMemoryUsage
+            expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High memory usage on {{ $labels.instance }}"
+              description: "Memory usage is {{ $value }}%"
+
+          # Node high disk usage
+          - alert: NodeHighDiskUsage
+            expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes * 100 > 85
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High disk usage on {{ $labels.instance }}"
+              description: "Disk usage is {{ $value }}%"
+
+          # Pod restarting frequently
+          - alert: PodRestartingFrequently
+            expr: increase(kube_pod_container_status_restarts_total[15m]) > 5
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod {{ $labels.pod }} is restarting frequently"
+              description: "Pod has restarted {{ $value }} times in the last 15 minutes"
+
       - name: milvus
         rules:
-          # High memory usage alert
+          # Milvus high memory usage
           - alert: MilvusHighMemoryUsage
             expr: container_memory_usage_bytes{container=~"milvus.*"} / container_spec_memory_limit_bytes{container=~"milvus.*"} > 0.8
             for: 5m
@@ -83,7 +206,7 @@ data:
               summary: "Milvus high memory usage"
               description: "{{ $labels.container }} memory usage is {{ $value | humanizePercentage }}"
 
-          # High CPU usage alert
+          # Milvus high CPU usage
           - alert: MilvusHighCPUUsage
             expr: rate(container_cpu_usage_seconds_total{container=~"milvus.*"}[5m]) / container_spec_cpu_quota{container=~"milvus.*"} * 100 > 80
             for: 5m
@@ -93,48 +216,40 @@ data:
               summary: "Milvus high CPU usage"
               description: "{{ $labels.container }} CPU usage is {{ $value }}%"
 
-          # Query latency alert
-          - alert: MilvusHighQueryLatency
-            expr: milvus_query_latency_seconds{quantile="0.99"} > 0.1
-            for: 2m
-            labels:
-              severity: warning
-            annotations:
-              summary: "Milvus high query latency"
-              description: "99th percentile query latency is {{ $value }}s"
-
-          # Insert rate alert
-          - alert: MilvusLowInsertRate
-            expr: rate(milvus_insert_requests_total[5m]) < 1000
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: "Milvus low insert rate"
-              description: "Insert rate is {{ $value }} requests/second"
-
-          # Search QPS alert
-          - alert: MilvusLowSearchQPS
-            expr: rate(milvus_search_requests_total[5m]) < 100
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: "Milvus low search QPS"
-              description: "Search QPS is {{ $value }} requests/second"
-
-          # Pod restart alert
-          - alert: MilvusPodRestart
-            expr: increase(kube_pod_container_status_restarts_total{container=~"milvus.*"}[5m]) > 0
+          # Milvus pod down
+          - alert: MilvusPodDown
+            expr: up{job="milvus"} == 0
+            for: 1m
             labels:
               severity: critical
             annotations:
-              summary: "Milvus pod restart"
-              description: "{{ $labels.pod }} has restarted {{ $value }} times in the last 5 minutes"
+              summary: "Milvus pod {{ $labels.instance }} is down"
+
+      - name: postgresql
+        rules:
+          # PostgreSQL high connections
+          - alert: PostgreSQLHighConnections
+            expr: pg_stat_database_numbackends > 80
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "PostgreSQL high connection count"
+              description: "{{ $value }} active connections"
+
+          # PostgreSQL replication lag
+          - alert: PostgreSQLReplicationLag
+            expr: pg_replication_lag_seconds > 30
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "PostgreSQL replication lag"
+              description: "Replication lag is {{ $value }} seconds"
 
       - name: storage
         rules:
-          # MinIO high usage alert
+          # MinIO high usage
           - alert: MinIOHighUsage
             expr: minio_bucket_usage_object_total / minio_bucket_usage_object_total > 0.85
             for: 5m
@@ -144,7 +259,7 @@ data:
               summary: "MinIO high usage"
               description: "MinIO bucket usage is {{ $value | humanizePercentage }}"
 
-          # etcd high usage alert
+          # etcd high usage
           - alert: EtcdHighUsage
             expr: etcd_server_quota_backend_bytes / etcd_server_quota_backend_bytes > 0.8
             for: 5m
@@ -152,4 +267,24 @@ data:
               severity: warning
             annotations:
               summary: "etcd high usage"
-              description: "etcd backend usage is {{ $value | humanizePercentage }}" 
+              description: "etcd backend usage is {{ $value | humanizePercentage }}"
+
+      - name: argocd
+        rules:
+          # ArgoCD application out of sync
+          - alert: ArgoCDApplicationOutOfSync
+            expr: argocd_app_info{sync_status="OutOfSync"} > 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "ArgoCD application {{ $labels.name }} is out of sync"
+
+          # ArgoCD application health degraded
+          - alert: ArgoCDApplicationHealthDegraded
+            expr: argocd_app_info{health_status="Degraded"} > 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "ArgoCD application {{ $labels.name }} health is degraded" 
