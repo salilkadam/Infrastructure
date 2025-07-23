@@ -55,11 +55,11 @@ spec:
           value: "default"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "2Gi"
+            cpu: "1000m"
           limits:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "4Gi"
+            cpu: "2000m"
         volumeMounts:
         - name: dev-workspace
           mountPath: /workspace
