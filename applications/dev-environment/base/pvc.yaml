@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: dev-workspace-pvc
+  name: dev-environment-pvc
   namespace: dev-environment
   labels:
     app.kubernetes.io/name: dev-environment
