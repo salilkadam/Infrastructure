@@ -59,9 +59,9 @@ spec:
           && chmod +x /usr/local/bin/mc
           
           # Create directories
-          mkdir -p /workspace/minio/data /workspace/minio/config \\
-          mkdir -p /etc/redis \\
-          mkdir -p /etc/postgresql/15/main \\
+          mkdir -p /workspace/minio/data /workspace/minio/config \
+          mkdir -p /etc/redis \
+          mkdir -p /etc/postgresql/15/main \
           mkdir -p /var/lib/postgresql/logfile
           
           # Configure Redis
@@ -98,6 +98,8 @@ spec:
           max_parallel_maintenance_workers = 4
           PG_EOF
           
+          # Ensure pg_hba.conf directory exists
+          mkdir -p /etc/postgresql/15/main
           cat > /etc/postgresql/15/main/pg_hba.conf << 'PG_HBA_EOF'
           local   all             postgres                                peer
           local   all             all                                     md5
