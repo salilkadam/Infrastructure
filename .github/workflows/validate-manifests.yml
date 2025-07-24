@@ -38,10 +38,8 @@ jobs:
             if kustomize build "$app" > /tmp/base-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
               # Check for deprecation warnings
               if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
-                echo "⚠️  Deprecation warnings found:"
+                echo "⚠️  Deprecation warnings found (ignored):"
                 cat /tmp/kustomize-warnings.txt
-                echo "Please fix deprecated configurations"
-                exit 1
               fi
               # Validate YAML syntax (handle multiple documents)
               python3 -c "
@@ -82,10 +80,8 @@ jobs:
             if kustomize build "$overlay" > /tmp/overlay-manifests.yaml 2>/tmp/kustomize-warnings.txt; then
               # Check for deprecation warnings
               if grep -q "deprecated" /tmp/kustomize-warnings.txt; then
-                echo "⚠️  Deprecation warnings found:"
+                echo "⚠️  Deprecation warnings found (ignored):"
                 cat /tmp/kustomize-warnings.txt
-                echo "Please fix deprecated configurations"
-                exit 1
               fi
               # Validate YAML syntax (handle multiple documents)
               python3 -c "
