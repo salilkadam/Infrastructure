@@ -100,7 +100,7 @@ spec:
             secretKeyRef:
               key: secret-key
               name: minio-app
-        image: docker4zerocool/dev-environment:c17d5ffb704bc6bd4c0661a4a5086cffd7c14dc0
+        image: docker4zerocool/dev-environment:latest
         name: dev-environment
         ports:
         - containerPort: 22
