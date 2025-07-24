@@ -31,6 +31,7 @@ RUN mkdir -p /workspace/minio/data /workspace/minio/config /workspace/scripts /v
 COPY applications/dev-environment/base/setup-local-services.sh /workspace/scripts/setup-local-services.sh
 COPY applications/dev-environment/base/setup-local-services-simple.sh /workspace/scripts/setup-local-services-simple.sh
 COPY applications/dev-environment/base/package.json /workspace/package.json
+RUN chmod +x /workspace/scripts/setup-local-services.sh /workspace/scripts/setup-local-services-simple.sh
 RUN cd /workspace && npm install
 
 # Copy test scripts from setup-local-services.sh (bake them in for health/integration checks)
