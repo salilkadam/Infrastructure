@@ -98,14 +98,8 @@ spec:
           max_parallel_maintenance_workers = 4
           PG_EOF
           
-          # Ensure pg_hba.conf directory exists
-          mkdir -p /etc/postgresql/15/main
-          cat > /etc/postgresql/15/main/pg_hba.conf << 'PG_HBA_EOF'
-          local   all             postgres                                peer
-          local   all             all                                     md5
-          host    all             all             127.0.0.1/32            md5
-          host    all             all             ::1/128                 md5
-          PG_HBA_EOF
+          # Write pg_hba.conf using echo to avoid here-doc issues
+          echo "local   all             postgres                                peer\nlocal   all             all                                     md5\nhost    all             all             127.0.0.1/32            md5\nhost    all             all             ::1/128                 md5" > /etc/postgresql/15/main/pg_hba.conf
           
           # Copy PostgreSQL configs to data directory
           cp /etc/postgresql/15/main/postgresql.conf /var/lib/postgresql/15/main/ \\
