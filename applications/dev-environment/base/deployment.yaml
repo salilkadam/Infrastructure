@@ -25,37 +25,408 @@ spec:
       - name: dev-environment
         image: python:3.11-slim
         command: ["/bin/bash"]
-        args: ["-c", "apt-get update && apt-get install -y curl wget git vim nano openssh-server && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && pip install psycopg2-binary redis minio boto3 && npm install -g yarn && mkdir -p /root/.ssh && cp /var/run/secrets/kubernetes.io/ssh-keys/id_rsa.pub /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && chmod 700 /root/.ssh && service ssh start && tail -f /dev/null"]
+        args: ["-c", "
+          # Update package lists and install system dependencies
+          apt-get update && apt-get install -y \\
+            curl wget git vim nano \\
+            build-essential \\
+            libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \\
+            redis-server postgresql postgresql-contrib \\
+            net-tools \\
+            locales \\
+            && rm -rf /var/lib/apt/lists/*
+          
+          # Install Node.js 20
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \\
+          && apt-get install -y nodejs \\
+          && npm install -g yarn \\
+          && rm -rf /var/lib/apt/lists/*
+          
+          # Install Python packages
+          pip install --no-cache-dir \\
+            opencv-python \\
+            redis \\
+            minio \\
+            psycopg2-binary \\
+            numpy \\
+            poetry \\
+            && rm -rf /root/.cache/pip
+          
+          # Download and install MinIO
+          wget -O /usr/local/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio \\
+          && chmod +x /usr/local/bin/minio \\
+          && wget -O /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \\
+          && chmod +x /usr/local/bin/mc
+          
+          # Create directories
+          mkdir -p /workspace/minio/data /workspace/minio/config \\
+          mkdir -p /etc/redis \\
+          mkdir -p /etc/postgresql/15/main \\
+          mkdir -p /var/lib/postgresql/logfile
+          
+          # Configure Redis
+          cat > /etc/redis/redis.conf << 'REDIS_EOF'
+          bind 127.0.0.1
+          port 6379
+          requirepass Th1515T0p53cr3t
+          maxmemory 256mb
+          maxmemory-policy allkeys-lru
+          save 900 1
+          save 300 10
+          save 60 10000
+          REDIS_EOF
+          
+          # Configure PostgreSQL
+          cat > /etc/postgresql/15/main/postgresql.conf << 'PG_EOF'
+          listen_addresses = '*'
+          port = 5432
+          max_connections = 100
+          shared_buffers = 256MB
+          effective_cache_size = 1GB
+          maintenance_work_mem = 64MB
+          checkpoint_completion_target = 0.9
+          wal_buffers = 16MB
+          default_statistics_target = 100
+          random_page_cost = 1.1
+          effective_io_concurrency = 200
+          work_mem = 4MB
+          min_wal_size = 1GB
+          max_wal_size = 4GB
+          max_worker_processes = 8
+          max_parallel_workers_per_gather = 4
+          max_parallel_workers = 8
+          max_parallel_maintenance_workers = 4
+          PG_EOF
+          
+          cat > /etc/postgresql/15/main/pg_hba.conf << 'PG_HBA_EOF'
+          local   all             postgres                                peer
+          local   all             all                                     md5
+          host    all             all             127.0.0.1/32            md5
+          host    all             all             ::1/128                 md5
+          PG_HBA_EOF
+          
+          # Copy PostgreSQL configs to data directory
+          cp /etc/postgresql/15/main/postgresql.conf /var/lib/postgresql/15/main/ \\
+          && cp /etc/postgresql/15/main/pg_hba.conf /var/lib/postgresql/15/main/ \\
+          && chown postgres:postgres /var/lib/postgresql/15/main/postgresql.conf \\
+          && chown postgres:postgres /var/lib/postgresql/15/main/pg_hba.conf
+          
+          # Start Redis
+          redis-server /etc/redis/redis.conf --daemonize yes
+          
+          # Start PostgreSQL
+          su -s /bin/bash -c '/usr/lib/postgresql/15/bin/pg_ctl -D /var/lib/postgresql/15/main -l /var/lib/postgresql/logfile start' postgres
+          
+          # Wait for PostgreSQL to be ready
+          sleep 5
+          
+          # Set PostgreSQL password and create database
+          su -s /bin/bash -c '/usr/lib/postgresql/15/bin/psql -c \"ALTER USER postgres PASSWORD \\'\\''Th1515T0p53cr3t\\'\\'';\"' postgres \\
+          && su -s /bin/bash -c '/usr/lib/postgresql/15/bin/createdb -O postgres assetdb' postgres \\
+          && su -s /bin/bash -c '/usr/lib/postgresql/15/bin/psql -d assetdb -c \"
+          CREATE TABLE IF NOT EXISTS assets (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              description TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+          
+          INSERT INTO assets (name, description) VALUES 
+              (\\'\\''Sample Asset 1\\'\\'', \\'\\''This is a sample asset for testing\\'\\''),
+              (\\'\\''Sample Asset 2\\'\\'', \\'\\''Another sample asset for testing\\'\\'')
+          ON CONFLICT DO NOTHING;
+          \"' postgres
+          
+          # Start MinIO
+          /usr/local/bin/minio server /workspace/minio/data --console-address ':9001' --address ':9000' &
+          
+          # Wait for MinIO to start
+          sleep 5
+          
+          # Configure MinIO client and create default bucket
+          /usr/local/bin/mc alias set myminio http://localhost:9000 minioadmin minioadmin \\
+          && /usr/local/bin/mc mb myminio/default --ignore-existing
+          
+          # Create test scripts
+          cat > /workspace/test-local-services.py << 'PYTHON_EOF'
+          #!/usr/bin/env python3
+          import os
+          import sys
+          import redis
+          from minio import Minio
+          import cv2
+          import numpy as np
+          import psycopg2
+          
+          def test_redis():
+              print('Testing Redis connection...')
+              try:
+                  r = redis.Redis(
+                      host='localhost',
+                      port=6379,
+                      password='Th1515T0p53cr3t',
+                      decode_responses=True
+                  )
+                  r.set('test_key', 'test_value')
+                  value = r.get('test_key')
+                  print(f'✅ Redis connected: test_key = {value}')
+                  r.delete('test_key')
+                  return True
+              except Exception as e:
+                  print(f'❌ Redis test failed: {e}')
+                  return False
+          
+          def test_minio():
+              print('Testing MinIO connection...')
+              try:
+                  client = Minio(
+                      'localhost:9000',
+                      access_key='minioadmin',
+                      secret_key='minioadmin',
+                      secure=False
+                  )
+                  buckets = list(client.list_buckets())
+                  print(f'✅ MinIO connected: Found {len(buckets)} buckets')
+                  return True
+              except Exception as e:
+                  print(f'❌ MinIO test failed: {e}')
+                  return False
+          
+          def test_postgresql():
+              print('Testing PostgreSQL connection...')
+              try:
+                  conn = psycopg2.connect(
+                      host='localhost',
+                      port=5432,
+                      database='assetdb',
+                      user='postgres',
+                      password='Th1515T0p53cr3t'
+                  )
+                  cursor = conn.cursor()
+                  cursor.execute('SELECT version();')
+                  version = cursor.fetchone()
+                  print(f'✅ PostgreSQL connected: {version[0]}')
+                  
+                  cursor.execute('SELECT COUNT(*) FROM assets;')
+                  count = cursor.fetchone()
+                  print(f'✅ Asset table has {count[0]} records')
+                  
+                  cursor.close()
+                  conn.close()
+                  return True
+              except Exception as e:
+                  print(f'❌ PostgreSQL test failed: {e}')
+                  return False
+          
+          def test_opencv():
+              print('Testing OpenCV...')
+              try:
+                  img = np.zeros((100, 100, 3), dtype=np.uint8)
+                  img[:] = (255, 0, 0)  # Blue color
+                  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                  blur = cv2.GaussianBlur(gray, (5, 5), 0)
+                  print(f'✅ OpenCV working: Image shape {img.shape}, Gray shape {gray.shape}')
+                  return True
+              except Exception as e:
+                  print(f'❌ OpenCV test failed: {e}')
+                  return False
+          
+          def main():
+              print('=== Local Development Environment Test ===')
+              
+              tests = [
+                  test_redis,
+                  test_minio,
+                  test_postgresql,
+                  test_opencv
+              ]
+              
+              passed = 0
+              total = len(tests)
+              
+              for test in tests:
+                  if test():
+                      passed += 1
+                  print()
+              
+              print(f'=== Test Results: {passed}/{total} tests passed ===')
+              
+              if passed == total:
+                  print('🎉 All services are working correctly!')
+                  return 0
+              else:
+                  print('⚠️  Some services failed. Check the logs above.')
+                  return 1
+          
+          if __name__ == '__main__':
+              sys.exit(main())
+          PYTHON_EOF
+          
+          chmod +x /workspace/test-local-services.py
+          
+          # Create environment info
+          cat > /workspace/ENVIRONMENT_INFO.md << 'INFO_EOF'
+          # Local Development Environment
+          
+          ## Services Available
+          
+          ### Redis
+          - **Host**: localhost
+          - **Port**: 6379
+          - **Password**: Th1515T0p53cr3t
+          
+          ### MinIO
+          - **API Host**: localhost
+          - **API Port**: 9000
+          - **Console Port**: 9001
+          - **Access Key**: minioadmin
+          - **Secret Key**: minioadmin
+          - **Default Bucket**: default
+          
+          ### PostgreSQL
+          - **Host**: localhost
+          - **Port**: 5432
+          - **Database**: assetdb
+          - **User**: postgres
+          - **Password**: Th1515T0p53cr3t
+          
+          ### OpenCV
+          - **Python Package**: opencv-python
+          - **System Libraries**: All required libraries installed
+          
+          ## Test Commands
+          
+          ```bash
+          # Test all services
+          python3 /workspace/test-local-services.py
+          
+          # Test individual services
+          redis-cli -h localhost -p 6379 -a Th1515T0p53cr3t ping
+          mc alias set myminio http://localhost:9000 minioadmin minioadmin
+          psql -h localhost -p 5432 -U postgres -d assetdb
+          python3 -c 'import cv2; print(cv2.__version__)'
+          ```
+          
+          ## Port Forwarding (for external access)
+          
+          ```bash
+          kubectl port-forward svc/dev-environment -n dev-environment 6379:6379  # Redis
+          kubectl port-forward svc/dev-environment -n dev-environment 9000:9000  # MinIO API
+          kubectl port-forward svc/dev-environment -n dev-environment 9001:9001  # MinIO Console
+          kubectl port-forward svc/dev-environment -n dev-environment 5432:5432  # PostgreSQL
+          ```
+          INFO_EOF
+          
+          echo '=== Local Development Environment Setup Complete ==='
+          echo 'Services available:'
+          echo '  Redis: localhost:6379 (password: Th1515T0p53cr3t)'
+          echo '  MinIO: localhost:9000 (API), localhost:9001 (Console)'
+          echo '  PostgreSQL: localhost:5432 (database: assetdb)'
+          echo '  OpenCV: Fully functional with all required libraries'
+          echo ''
+          echo 'Test the setup with: python3 /workspace/test-local-services.py'
+          echo ''
+          
+          # Keep the container running
+          tail -f /dev/null
+        "]
         ports:
-        - containerPort: 3000
-          name: node
-        - containerPort: 8000
-          name: python
-        - containerPort: 22
-          name: ssh
+        - name: ssh
+          containerPort: 22
+        - name: redis
+          containerPort: 6379
+        - name: minio-api
+          containerPort: 9000
+        - name: minio-console
+          containerPort: 9001
+        - name: postgresql
+          containerPort: 5432
         env:
-        - name: POSTGRES_HOST
-          value: "pg-rw.postgres.svc.cluster.local"
-        - name: POSTGRES_PORT
-          value: "5432"
-        - name: POSTGRES_DB
-          value: "postgres"
-        - name: POSTGRES_USER
-          value: "postgres"
-        - name: POSTGRES_PASSWORD
-          value: "postgres_password"
-        - name: REDIS_HOST
-          value: "redis.redis.svc.cluster.local"
-        - name: REDIS_PORT
+        - name: LOCAL_REDIS_HOST
+          value: "localhost"
+        - name: LOCAL_REDIS_PORT
           value: "6379"
+        - name: LOCAL_REDIS_PASSWORD
+          value: "Th1515T0p53cr3t"
+        - name: LOCAL_MINIO_ENDPOINT
+          value: "localhost:9000"
+        - name: LOCAL_MINIO_ACCESS_KEY
+          value: "minioadmin"
+        - name: LOCAL_MINIO_SECRET_KEY
+          value: "minioadmin"
+        - name: LOCAL_POSTGRES_HOST
+          value: "localhost"
+        - name: LOCAL_POSTGRES_PORT
+          value: "5432"
+        - name: LOCAL_POSTGRES_DB
+          value: "assetdb"
+        - name: LOCAL_POSTGRES_USER
+          value: "postgres"
+        - name: LOCAL_POSTGRES_PASSWORD
+          value: "Th1515T0p53cr3t"
+        # Production service environment variables (unchanged)
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: pg-app
+              key: host
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: pg-app
+              key: port
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: pg-app
+              key: database
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: pg-app
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pg-app
+              key: password
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: redis-app
+              key: host
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: redis-app
+              key: port
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-app
+              key: password
         - name: MINIO_ENDPOINT
-          value: "minio-hl.minio.svc.cluster.local:9000"
+          valueFrom:
+            secretKeyRef:
+              name: minio-app
+              key: endpoint
         - name: MINIO_ACCESS_KEY
-          value: "minioadmin"
+          valueFrom:
+            secretKeyRef:
+              name: minio-app
+              key: access-key
         - name: MINIO_SECRET_KEY
-          value: "minioadmin"
-        - name: MINIO_BUCKET
-          value: "default"
+          valueFrom:
+            secretKeyRef:
+              name: minio-app
+              key: secret-key
+        volumeMounts:
+        - name: workspace-storage
+          mountPath: /workspace
+        - name: ssh-keys
+          mountPath: /root/.ssh
+          readOnly: true
         resources:
           requests:
             memory: "2Gi"
@@ -63,17 +434,17 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2000m"
-        volumeMounts:
-        - name: dev-workspace
-          mountPath: /workspace
-        - name: ssh-keys
-          mountPath: /var/run/secrets/kubernetes.io/ssh-keys
-          readOnly: true
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
       volumes:
-      - name: dev-workspace
+      - name: workspace-storage
         persistentVolumeClaim:
-          claimName: dev-workspace-pvc
+          claimName: dev-environment-pvc
       - name: ssh-keys
         secret:
-          secretName: dev-ssh-keys
+          secretName: ssh-keys
           defaultMode: 0400 

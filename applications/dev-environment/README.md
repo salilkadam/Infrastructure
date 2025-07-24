@@ -1,14 +1,16 @@
 # Development Environment
 
-This directory contains a Kubernetes-based development environment with Python and Node.js support, including clients for PostgreSQL, Redis, and MinIO.
+This directory contains a Kubernetes-based development environment with Python and Node.js support, including local instances of PostgreSQL, Redis, and MinIO for development and testing.
 
 ## Features
 
-- **Python 3.11** with development tools
+- **Python 3.11** with development tools and Poetry
 - **Node.js 20** with npm and yarn
-- **PostgreSQL client** (psycopg2-binary)
-- **Redis client** (redis)
-- **MinIO client** (minio, boto3)
+- **OpenCV Support** with all required libraries (libgl1-mesa-glx, libglib2.0-0, libsm6, libxext6, libxrender-dev, libgomp1)
+- **Local PostgreSQL** instance with `assetdb` database
+- **Local Redis** instance with authentication
+- **Local MinIO** instance with web console
+- **Production service clients** (PostgreSQL, Redis, MinIO)
 - **Development tools**: git, vim, nano, curl, wget
 - **Persistent workspace** (10Gi storage)
 - **SSH key support** for git access
@@ -18,191 +20,231 @@ This directory contains a Kubernetes-based development environment with Python a
 ### 1. Deploy the Environment
 
 ```bash
-# Apply the ArgoCD application
-kubectl apply -f applications/dev-environment/argocd-application.yaml
+# Apply the development environment
+kubectl apply -k applications/dev-environment/
 
-# Or apply directly with kustomize
-kubectl apply -k applications/dev-environment/base/
+# Wait for the pod to be ready
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=dev-environment -n dev-environment --timeout=300s
 ```
 
-### 2. Access the Development Environment
+### 2. Access the Environment
 
-#### Option A: Shell Access
 ```bash
 # Get the pod name
-kubectl get pods -n dev-environment
+POD_NAME=$(kubectl get pods -n dev-environment -l app.kubernetes.io/name=dev-environment --no-headers | awk '{print $1}')
 
-# Shell into the container
-kubectl exec -it <pod-name> -n dev-environment -- /bin/bash
+# Access the container
+kubectl exec -it $POD_NAME -n dev-environment -- bash
 ```
 
-#### Option B: Port Forward
+### 3. Test the Setup
+
 ```bash
-# Forward Node.js port
-kubectl port-forward svc/dev-environment -n dev-environment 3000:3000
-
-# Forward Python port
-kubectl port-forward svc/dev-environment -n dev-environment 8000:8000
+# Run the comprehensive test script
+python3 /workspace/test-local-services.py
 ```
 
-#### Option C: Web Access
-Access via: https://dev.askcollections.com
+## Local Services
+
+### Local PostgreSQL
+
+- **Host**: localhost
+- **Port**: 5432
+- **Database**: assetdb
+- **User**: postgres
+- **Password**: Th1515T0p53cr3t
+
+```bash
+# Connect to PostgreSQL
+psql -h localhost -p 5432 -U postgres -d assetdb
+
+# Python example
+import psycopg2
+conn = psycopg2.connect(
+    host='localhost',
+    port=5432,
+    database='assetdb',
+    user='postgres',
+    password='Th1515T0p53cr3t'
+)
+```
+
+### Local Redis
+
+- **Host**: localhost
+- **Port**: 6379
+- **Password**: Th1515T0p53cr3t
+
+```bash
+# Connect to Redis
+redis-cli -h localhost -p 6379 -a Th1515T0p53cr3t
+
+# Python example
+import redis
+r = redis.Redis(host='localhost', port=6379, password='Th1515T0p53cr3t', decode_responses=True)
+```
+
+### Local MinIO
+
+- **API Host**: localhost
+- **API Port**: 9000
+- **Console Port**: 9001
+- **Access Key**: minioadmin
+- **Secret Key**: minioadmin
+- **Default Bucket**: default
+
+```bash
+# Web Console
+# Access via: http://localhost:9001
+# Login: minioadmin / minioadmin
+
+# Command line
+mc alias set myminio http://localhost:9000 minioadmin minioadmin
+mc ls myminio
+
+# Python example
+from minio import Minio
+client = Minio('localhost:9000', access_key='minioadmin', secret_key='minioadmin', secure=False)
+```
+
+### OpenCV Support
+
+```python
+import cv2
+import numpy as np
+
+# Test basic functionality
+img = np.zeros((100, 100, 3), dtype=np.uint8)
+img[:] = (255, 0, 0)  # Blue color
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+```
+
+## Connection Information
+
+### Local Development Services
+
+| Service | Host | Port | Credentials |
+|---------|------|------|-------------|
+| PostgreSQL | localhost | 5432 | postgres/Th1515T0p53cr3t |
+| Redis | localhost | 6379 | -/Th1515T0p53cr3t |
+| MinIO API | localhost | 9000 | minioadmin/minioadmin |
+| MinIO Console | localhost | 9001 | minioadmin/minioadmin |
+
+### Production Services
+
+The environment also provides access to production services via environment variables:
+
+- `POSTGRES_*` - Production PostgreSQL
+- `REDIS_*` - Production Redis  
+- `MINIO_*` - Production MinIO
+
+## Port Forwarding
+
+To access services from your local machine:
+
+```bash
+# Redis
+kubectl port-forward svc/dev-environment -n dev-environment 6379:6379
+
+# MinIO API
+kubectl port-forward svc/dev-environment -n dev-environment 9000:9000
+
+# MinIO Console
+kubectl port-forward svc/dev-environment -n dev-environment 9001:9001
+
+# PostgreSQL
+kubectl port-forward svc/dev-environment -n dev-environment 5432:5432
+```
+
+## Development Workflow
+
+1. **Start Development**: Access the container and start coding
+2. **Use Local Services**: Connect to local PostgreSQL, Redis, and MinIO for development
+3. **Test Locally**: Use the provided test scripts to verify functionality
+4. **Deploy to Production**: Use production service environment variables for production testing
+
+## Testing
+
+### Automated Testing
+
+```bash
+# Run comprehensive test suite
+./scripts/test-dev-environment.sh
+```
+
+### Manual Testing
+
+```bash
+# Test individual services
+python3 /workspace/test-local-services.py
+
+# Test Redis
+redis-cli -h localhost -p 6379 -a Th1515T0p53cr3t ping
+
+# Test MinIO
+mc alias set myminio http://localhost:9000 minioadmin minioadmin
+mc ls myminio
+
+# Test PostgreSQL
+psql -h localhost -p 5432 -U postgres -d assetdb -c "SELECT version();"
+
+# Test OpenCV
+python3 -c "import cv2; print(cv2.__version__)"
+```
 
 ## Environment Variables
 
-The container comes with pre-configured environment variables for connecting to your infrastructure services:
+### Local Services
 
-### PostgreSQL
-- `POSTGRES_HOST`: pg-rw.postgres.svc.cluster.local
-- `POSTGRES_PORT`: 5432
-- `POSTGRES_DB`: postgres
-- `POSTGRES_USER`: postgres
-- `POSTGRES_PASSWORD`: postgres_password
+- `LOCAL_POSTGRES_*` - Local PostgreSQL configuration
+- `LOCAL_REDIS_*` - Local Redis configuration  
+- `LOCAL_MINIO_*` - Local MinIO configuration
 
-### Redis
-- `REDIS_HOST`: redis.redis.svc.cluster.local
-- `REDIS_PORT`: 6379
+### Production Services
 
-### MinIO
-- `MINIO_ENDPOINT`: minio.minio.svc.cluster.local:9000
-- `MINIO_ACCESS_KEY`: minioadmin
-- `MINIO_SECRET_KEY`: minioadmin
-- `MINIO_BUCKET`: default
-
-## Usage Examples
-
-### Python Development
-
-```python
-# PostgreSQL connection
-import psycopg2
-import os
-
-conn = psycopg2.connect(
-    host=os.getenv('POSTGRES_HOST'),
-    port=os.getenv('POSTGRES_PORT'),
-    database=os.getenv('POSTGRES_DB'),
-    user=os.getenv('POSTGRES_USER'),
-    password=os.getenv('POSTGRES_PASSWORD')
-)
-
-# Redis connection
-import redis
-r = redis.Redis(
-    host=os.getenv('REDIS_HOST'),
-    port=int(os.getenv('REDIS_PORT'))
-)
-
-# MinIO connection
-from minio import Minio
-client = Minio(
-    os.getenv('MINIO_ENDPOINT'),
-    access_key=os.getenv('MINIO_ACCESS_KEY'),
-    secret_key=os.getenv('MINIO_SECRET_KEY'),
-    secure=False
-)
-```
-
-### Node.js Development
-
-```javascript
-// PostgreSQL connection
-const { Client } = require('pg');
-const client = new Client({
-  host: process.env.POSTGRES_HOST,
-  port: process.env.POSTGRES_PORT,
-  database: process.env.POSTGRES_DB,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-});
-
-// Redis connection
-const redis = require('redis');
-const client = redis.createClient({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT
-});
-
-// MinIO connection
-const Minio = require('minio');
-const minioClient = new Minio.Client({
-  endPoint: process.env.MINIO_ENDPOINT.split(':')[0],
-  port: parseInt(process.env.MINIO_ENDPOINT.split(':')[1]),
-  useSSL: false,
-  accessKey: process.env.MINIO_ACCESS_KEY,
-  secretKey: process.env.MINIO_SECRET_KEY
-});
-```
-
-## Workspace
-
-Your development workspace is mounted at `/workspace` and persists across pod restarts. This is where you should store your code and projects.
-
-## SSH Keys
-
-To use SSH keys for git access:
-
-1. Add your SSH keys to the `secret.yaml` file:
-   ```yaml
-   stringData:
-     id_rsa: |
-       -----BEGIN OPENSSH PRIVATE KEY-----
-       Your private key content here
-       -----END OPENSSH PRIVATE KEY-----
-     id_rsa.pub: |
-       ssh-rsa Your public key content here
-   ```
-
-2. Apply the updated secret:
-   ```bash
-   kubectl apply -f applications/dev-environment/base/secret.yaml
-   ```
-
-3. Restart the deployment:
-   ```bash
-   kubectl rollout restart deployment/dev-environment -n dev-environment
-   ```
+- `POSTGRES_*` - Production PostgreSQL configuration
+- `REDIS_*` - Production Redis configuration
+- `MINIO_*` - Production MinIO configuration
 
 ## Troubleshooting
 
-### Check Pod Status
+### Service Not Starting
+
 ```bash
-kubectl get pods -n dev-environment
-kubectl describe pod <pod-name> -n dev-environment
+# Check service status
+netstat -tuln | grep -E ':(6379|5432|9000|9001) '
+
+# Check logs
+kubectl logs -n dev-environment <pod-name>
 ```
 
-### Check Logs
+### Connection Issues
+
 ```bash
-kubectl logs <pod-name> -n dev-environment
+# Test connectivity
+telnet localhost 6379  # Redis
+telnet localhost 5432  # PostgreSQL
+telnet localhost 9000  # MinIO API
+telnet localhost 9001  # MinIO Console
 ```
 
-### Check Services
+### Reset Environment
+
 ```bash
-kubectl get svc -n dev-environment
+# Delete and recreate the pod
+kubectl delete pod -l app.kubernetes.io/name=dev-environment -n dev-environment
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=dev-environment -n dev-environment
 ```
 
-### Check PVC
-```bash
-kubectl get pvc -n dev-environment
-```
+## Architecture
 
-## Customization
+The development environment runs as a single container with:
 
-### Adding More Tools
+- **System Services**: PostgreSQL, Redis, MinIO running as local processes
+- **Development Tools**: Python, Node.js, Git, editors
+- **Libraries**: OpenCV, database drivers, and other development dependencies
+- **Storage**: Persistent volume for workspace data
+- **Networking**: Services bound to localhost for security
 
-To add additional development tools, modify the `deployment.yaml` file and update the command in the container spec.
-
-### Changing Base Image
-
-You can change the base image from `python:3.11-slim` to any other image that supports your development needs.
-
-### Resource Limits
-
-Adjust the resource requests and limits in `deployment.yaml` based on your needs.
-
-## Security Notes
-
-- The container runs as root for development convenience
-- SSH keys are mounted as read-only
-- Environment variables contain sensitive information
-- Consider using Kubernetes secrets for production use 
+This setup provides a complete, isolated development environment that can be easily deployed and destroyed as needed. 
