@@ -117,9 +117,9 @@ spec:
           sleep 5
           
           # Set PostgreSQL password and create database
-          su -s /bin/bash -c '/usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD \'\''Th1515T0p53cr3t\'\'';"' postgres \
-          && su -s /bin/bash -c '/usr/lib/postgresql/15/bin/createdb -O postgres assetdb' postgres \
-          && su -s /bin/bash -c '/usr/lib/postgresql/15/bin/psql -d assetdb -c "CREATE TABLE IF NOT EXISTS assets (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); INSERT INTO assets (name, description) VALUES (\'Sample Asset 1\', \'This is a sample asset for testing\'), (\'Sample Asset 2\', \'Another sample asset for testing\') ON CONFLICT DO NOTHING;"' postgres
+          su -s /bin/bash -c "/usr/lib/postgresql/15/bin/psql -c \"ALTER USER postgres PASSWORD 'Th1515T0p53cr3t';\"" postgres \
+          && su -s /bin/bash -c "/usr/lib/postgresql/15/bin/createdb -O postgres assetdb" postgres \
+          && su -s /bin/bash -c "/usr/lib/postgresql/15/bin/psql -d assetdb -c \"CREATE TABLE IF NOT EXISTS assets (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); INSERT INTO assets (name, description) VALUES ('Sample Asset 1', 'This is a sample asset for testing'), ('Sample Asset 2', 'Another sample asset for testing') ON CONFLICT DO NOTHING;\"" postgres
           
           # Start MinIO
           /usr/local/bin/minio server /workspace/minio/data --console-address ':9001' --address ':9000' &
