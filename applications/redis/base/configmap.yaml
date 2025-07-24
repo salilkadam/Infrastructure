@@ -45,7 +45,7 @@ data:
     repl-backlog-ttl 3600
     
     # Security
-    requirepass ${REDIS_PASSWORD}
+    requirepass redis_password_2024
     
     # Memory Management
     maxmemory 2gb
@@ -105,13 +105,11 @@ data:
     # Sentinel Configuration
     port 26379
     dir /tmp
-    sentinel monitor mymaster redis-0.redis.redis.svc.cluster.local 6379 2
+    sentinel monitor mymaster 127.0.0.1 6379 2
     sentinel down-after-milliseconds mymaster 5000
     sentinel parallel-syncs mymaster 1
     sentinel failover-timeout mymaster 10000
-    sentinel auth-pass mymaster ${REDIS_PASSWORD}
+    sentinel auth-pass mymaster redis_password_2024
     sentinel config-epoch mymaster 0
     sentinel leader-epoch mymaster 0
-    sentinel known-replica mymaster redis-1.redis.redis.svc.cluster.local 6379
-    sentinel known-replica mymaster redis-2.redis.redis.svc.cluster.local 6379
     sentinel current-epoch 0 
