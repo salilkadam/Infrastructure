@@ -20,11 +20,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: List files in build context
+        run: |
+          ls -lR .
+          ls -lR applications/dev-environment/base
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Validate manifests (ignore warnings)
+        run: |
+          set +e
+          echo "🔍 Validating MinIO base manifests..."
+          kustomize build applications/cloudnative-pg/base --load-restrictor=none 2>&1 | tee kustomize.log
+          if grep -q '^Error:' kustomize.log; then
+            echo "❌ Kustomize build failed with errors."
+            exit 1
+          else
+            echo "✅ Kustomize build completed (warnings ignored)."
+          fi
+          set -e
 
       - name: Build and push Docker image (multi-arch)
         uses: docker/build-push-action@v5
