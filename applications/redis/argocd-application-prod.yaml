@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis-prod
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: infrastructure
+    environment: production
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/salilkadam/Infrastructure.git
+    targetRevision: HEAD
+    path: applications/redis/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: redis-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+  revisionHistoryLimit: 10 
