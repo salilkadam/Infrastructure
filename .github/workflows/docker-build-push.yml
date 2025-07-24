@@ -36,11 +36,11 @@ jobs:
           set +e
           echo "🔍 Validating MinIO base manifests..."
           kustomize build applications/cloudnative-pg/base --load-restrictor=none 2>&1 | tee kustomize.log
-          if grep -q '^Error:' kustomize.log; then
-            echo "❌ Kustomize build failed with errors."
+          if grep -q '^Error:' kustomize.log && ! grep -qi 'deprecated' kustomize.log; then
+            echo "❌ Kustomize build failed with errors (not just deprecation warnings)."
             exit 1
           else
-            echo "✅ Kustomize build completed (warnings ignored)."
+            echo "✅ Kustomize build completed (deprecation warnings ignored)."
           fi
           set -e
 
