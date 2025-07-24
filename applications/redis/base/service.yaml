@@ -14,10 +14,6 @@ spec:
     targetPort: 6379
     protocol: TCP
     name: redis
-  - port: 26379
-    targetPort: 26379
-    protocol: TCP
-    name: sentinel
   selector:
     app.kubernetes.io/name: redis
     app.kubernetes.io/part-of: infrastructure
@@ -38,11 +34,6 @@ spec:
     protocol: TCP
     name: redis
     nodePort: 30379
-  - port: 26379
-    targetPort: 26379
-    protocol: TCP
-    name: sentinel
-    nodePort: 30380
   selector:
     app.kubernetes.io/name: redis
     app.kubernetes.io/part-of: infrastructure 
