@@ -1,65 +1,3 @@
-# Warning: 'commonLabels' is deprecated. Please use 'labels' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
-apiVersion: v1
-kind: Secret
-metadata:
-  labels:
-    app.kubernetes.io/component: development
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  name: dev-ssh-keys
-  namespace: dev-environment
-stringData:
-  id_rsa.pub: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCwxPOX2vQsY8sz36NF4FfCIdjt1CWBMBmYzgtZNNWkEN7D6KZb/jL3PgfCbIWTi84H38ObnC5TCvdypTLdE2YAMekc1NB5wI+KX3DbIPW2WDOOqcTPr2q4LoYuHfCx9I+/d1iwOSr/rvKfhXO8NqJwST1tSM2DNd1AwD1PD8xMCJYjYkPhw7r+ApAm74m2sTIDMtCdiJAj7SY0TaOcuAvz0WMQ3akEJ1IskrJPDDcGVndPsXgdEemvJ+V5LpHgt3TfEBKUQUkj1sCKEEhiPAyOO7LyxQ3WCMmvonK9idIB2m7fPz2iD1MSzz5SXAfm3u2bEfeTMd00gheffzcv+WFo2CshgZKFFzOUdnjvrcgIuvlNAEWKauSDn6IBCuP6ieWhTfsKFYwNmAoRF5qIRRq7k2pMeUSdQE36eH/w3MtkhW1gB1eOhDvW+eaZTzCgaPjT7zfLkMpJc4Y6uyYrH5NVLjJ07UOxUAvc8eMPLkvx+f1RpRfwrJ0lvN+fDVIM+/s=
-    root@ubuntu '
-type: Opaque
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: development
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  name: dev-environment
-  namespace: dev-environment
-spec:
-  ports:
-  - name: node
-    port: 3000
-    protocol: TCP
-    targetPort: 3000
-  - name: python
-    port: 8000
-    protocol: TCP
-    targetPort: 8000
-  - name: ssh
-    nodePort: 30222
-    port: 22
-    protocol: TCP
-    targetPort: 22
-  selector:
-    app.kubernetes.io/component: development
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  type: NodePort
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  labels:
-    app.kubernetes.io/component: development
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  name: dev-environment-pvc
-  namespace: dev-environment
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: nfs-client
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -84,158 +22,123 @@ spec:
         app.kubernetes.io/part-of: infrastructure
     spec:
       containers:
-        - env:
-            - name: LOCAL_REDIS_HOST
-              value: localhost
-            - name: LOCAL_REDIS_PORT
-              value: "6379"
-            - name: LOCAL_REDIS_PASSWORD
-              value: Th1515T0p53cr3t
-            - name: LOCAL_MINIO_ENDPOINT
-              value: localhost:9000
-            - name: LOCAL_MINIO_ACCESS_KEY
-              value: minioadmin
-            - name: LOCAL_MINIO_SECRET_KEY
-              value: minioadmin
-            - name: LOCAL_POSTGRES_HOST
-              value: localhost
-            - name: LOCAL_POSTGRES_PORT
-              value: "5432"
-            - name: LOCAL_POSTGRES_DB
-              value: assetdb
-            - name: LOCAL_POSTGRES_USER
-              value: postgres
-            - name: LOCAL_POSTGRES_PASSWORD
-              value: Th1515T0p53cr3t
-            - name: POSTGRES_HOST
-              valueFrom:
-                secretKeyRef:
-                  key: host
-                  name: pg-app
-            - name: POSTGRES_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: port
-                  name: pg-app
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  key: database
-                  name: pg-app
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  key: username
-                  name: pg-app
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: pg-app
-            - name: REDIS_HOST
-              valueFrom:
-                secretKeyRef:
-                  key: host
-                  name: redis-app
-            - name: REDIS_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: port
-                  name: redis-app
-            - name: REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: redis-app
-            - name: MINIO_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  key: endpoint
-                  name: minio-app
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  key: access-key
-                  name: minio-app
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  key: secret-key
-                  name: minio-app
-          image: docker4zerocool/dev-environment:latest
-          name: dev-environment
-          ports:
-            - containerPort: 22
-              name: ssh
-            - containerPort: 6379
-              name: redis
-            - containerPort: 9000
-              name: minio-api
-            - containerPort: 9001
-              name: minio-console
-            - containerPort: 5432
-              name: postgresql
-          resources:
-            limits:
-              cpu: 2000m
-              memory: 4Gi
-            requests:
-              cpu: 1000m
-              memory: 2Gi
-          securityContext:
-            allowPrivilegeEscalation: true
-            capabilities:
-              add:
-                - SYS_ADMIN
-            runAsUser: 0
-          volumeMounts:
-            - mountPath: /workspace
-              name: workspace-storage
-            - mountPath: /root/.ssh
-              name: ssh-keys
-              readOnly: true
+      - env:
+        - name: LOCAL_REDIS_HOST
+          value: localhost
+        - name: LOCAL_REDIS_PORT
+          value: "6379"
+        - name: LOCAL_REDIS_PASSWORD
+          value: Th1515T0p53cr3t
+        - name: LOCAL_MINIO_ENDPOINT
+          value: localhost:9000
+        - name: LOCAL_MINIO_ACCESS_KEY
+          value: minioadmin
+        - name: LOCAL_MINIO_SECRET_KEY
+          value: minioadmin
+        - name: LOCAL_POSTGRES_HOST
+          value: localhost
+        - name: LOCAL_POSTGRES_PORT
+          value: "5432"
+        - name: LOCAL_POSTGRES_DB
+          value: assetdb
+        - name: LOCAL_POSTGRES_USER
+          value: postgres
+        - name: LOCAL_POSTGRES_PASSWORD
+          value: Th1515T0p53cr3t
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              key: host
+              name: pg-app
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              key: port
+              name: pg-app
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              key: database
+              name: pg-app
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: pg-app
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: pg-app
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              key: host
+              name: redis-app
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              key: port
+              name: redis-app
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redis-app
+        - name: MINIO_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              key: endpoint
+              name: minio-app
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: access-key
+              name: minio-app
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-key
+              name: minio-app
+        image: docker4zerocool/dev-environment:latest
+        name: dev-environment
+        ports:
+        - containerPort: 22
+          name: ssh
+        - containerPort: 6379
+          name: redis
+        - containerPort: 9000
+          name: minio-api
+        - containerPort: 9001
+          name: minio-console
+        - containerPort: 5432
+          name: postgresql
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /workspace
+          name: workspace-storage
+        - mountPath: /root/.ssh
+          name: ssh-keys
+          readOnly: true
       imagePullSecrets:
-        - name: regcred
+      - name: regcred
       volumes:
-        - name: workspace-storage
-          persistentVolumeClaim:
-            claimName: dev-environment-pvc
-        - name: ssh-keys
-          secret:
-            defaultMode: 256
-            secretName: dev-ssh-keys
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: 50m
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  labels:
-    app.kubernetes.io/component: development
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  name: dev-environment-ingress
-  namespace: dev-environment
-spec:
-  rules:
-  - host: dev.askcollections.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: dev-environment
-            port:
-              number: 8000
-        path: /
-        pathType: Prefix
-  tls:
-  - hosts:
-    - dev.askcollections.com
-    secretName: dev-environment-tls
+      - name: workspace-storage
+        persistentVolumeClaim:
+          claimName: dev-environment-pvc
+      - name: ssh-keys
+        secret:
+          defaultMode: 256
+          secretName: dev-ssh-keys
