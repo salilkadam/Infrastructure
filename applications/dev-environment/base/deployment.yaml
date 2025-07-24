@@ -127,7 +127,7 @@ spec:
             - SYS_ADMIN
           runAsUser: 0
         volumeMounts:
-        - mountPath: /workspace
+        - mountPath: /workspace/data
           name: workspace-storage
         - mountPath: /root/.ssh
           name: ssh-keys
