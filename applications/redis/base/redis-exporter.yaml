@@ -21,15 +21,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9121"
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - ubuntu
+
       containers:
       - name: redis-exporter
         image: oliver006/redis_exporter:v1.55.0
