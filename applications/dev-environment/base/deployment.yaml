@@ -1,13 +1,5 @@
 # Warning: 'commonLabels' is deprecated. Please use 'labels' instead. Run 'kustomize edit fix' to update your Kustomization automatically.
 apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    app.kubernetes.io/name: dev-environment
-    app.kubernetes.io/part-of: infrastructure
-  name: dev-environment
----
-apiVersion: v1
 kind: Secret
 metadata:
   labels:
