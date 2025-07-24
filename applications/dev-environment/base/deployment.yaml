@@ -446,5 +446,5 @@ spec:
           claimName: dev-environment-pvc
       - name: ssh-keys
         secret:
-          secretName: ssh-keys
+          secretName: dev-ssh-keys
           defaultMode: 0400 
