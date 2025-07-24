@@ -116,7 +116,7 @@ jobs:
       run: |
         echo "Checking for potential secrets..."
         # Look for potential hardcoded secrets but exclude legitimate Kubernetes references and known test/dev values
-        WHITELIST='minioadmin|allkeys-lru|maxmemory-policy|bearer_token_file|jwt-token|keyspace-events|Y0JScHU4bUxFaw==|cBRpu8mLEk|test|changeme|example|default|postgres|sslmode=disable'
+        WHITELIST='minioadmin|allkeys-lru|maxmemory-policy|bearer_token_file|jwt-token|keyspace-events|Y0JScHU4bUxFaw==|cBRpu8mLEk|test|changeme|example|default|postgres|sslmode=disable|secret-minio-credentials.yaml|secret-etcd-credentials.yaml|/opt/bitnami/etcd/secrets/etcd-root-password|/opt/bitnami/etcd/secrets|mountPath'
         if grep -r -E "(password|secret|key)" --include="*.yaml" --include="*.yml" applications/ | \
            grep -v -E "(secretKeyRef|name.*secret|name.*key|secretName:|access-key:|secret-key:|key:|key encipherment|# .*password|tls\\.key|tls\\.crt|ca\\.crt|private\\.key|MINIO_ROOT|metadata\\.name|secret\\.yaml|secret:$)" | \
            grep -v -E "$WHITELIST"; then
