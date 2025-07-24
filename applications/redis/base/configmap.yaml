@@ -45,7 +45,7 @@ data:
     repl-backlog-ttl 3600
     
     # Security
-    requirepass redis_password_2024
+    requirepass Th1515T0p53cr3t
     
     # Memory Management
     maxmemory 2gb
@@ -109,7 +109,7 @@ data:
     sentinel down-after-milliseconds mymaster 5000
     sentinel parallel-syncs mymaster 1
     sentinel failover-timeout mymaster 10000
-    sentinel auth-pass mymaster redis_password_2024
+    sentinel auth-pass mymaster Th1515T0p53cr3t
     sentinel config-epoch mymaster 0
     sentinel leader-epoch mymaster 0
     sentinel current-epoch 0 

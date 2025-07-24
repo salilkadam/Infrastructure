@@ -52,10 +52,10 @@ kubectl get services -n redis
 
 ```bash
 # Test Redis connection
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 ping
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t ping
 
 # Check Redis info
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 info replication
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t info replication
 
 # Check Sentinel status
 kubectl exec -it redis-0 -n redis -- redis-cli -p 26379 sentinel masters
@@ -67,7 +67,7 @@ kubectl exec -it redis-0 -n redis -- redis-cli -p 26379 sentinel masters
 
 - **Redis**: `redis-0.redis.redis.svc.cluster.local:6379`
 - **Sentinel**: `redis-0.redis.redis.svc.cluster.local:26379`
-- **Password**: `redis_password_2024`
+- **Password**: `Th1515T0p53cr3t`
 
 ### External Access
 
@@ -85,7 +85,7 @@ import redis
 r = redis.Redis(
     host='redis-0.redis.redis.svc.cluster.local',
     port=6379,
-    password='redis_password_2024',
+    password='Th1515T0p53cr3t',
     decode_responses=True
 )
 
@@ -93,7 +93,7 @@ r = redis.Redis(
 r = redis.Redis(
     host='<cluster-node-ip>',
     port=30379,
-    password='redis_password_2024',
+    password='Th1515T0p53cr3t',
     decode_responses=True
 )
 
@@ -109,14 +109,14 @@ const redis = require('redis');
 const client = redis.createClient({
   host: 'redis-0.redis.redis.svc.cluster.local',
   port: 6379,
-  password: 'redis_password_2024'
+  password: 'Th1515T0p53cr3t'
 });
 
 // External connection
 const client = redis.createClient({
   host: '<cluster-node-ip>',
   port: 30379,
-  password: 'redis_password_2024'
+  password: 'Th1515T0p53cr3t'
 });
 
 client.on('connect', () => {
@@ -127,10 +127,10 @@ client.on('connect', () => {
 #### Redis CLI
 ```bash
 # Internal access
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t
 
 # External access
-redis-cli -h <cluster-node-ip> -p 30379 -a redis_password_2024
+redis-cli -h <cluster-node-ip> -p 30379 -a Th1515T0p53cr3t
 ```
 
 ## Environment Configurations
@@ -204,7 +204,7 @@ Import the Redis dashboard in Grafana:
 
 ```bash
 # Create backup
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 BGSAVE
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t BGSAVE
 
 # Copy backup file
 kubectl cp redis/redis-0:/data/dump.rdb ./redis-backup.rdb
@@ -245,7 +245,7 @@ kubectl exec -it redis-0 -n redis -- redis-cli -p 26379 sentinel masters
 #### 3. Connection Issues
 ```bash
 # Test internal connectivity
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 ping
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t ping
 
 # Check service endpoints
 kubectl get endpoints -n redis
@@ -254,7 +254,7 @@ kubectl get endpoints -n redis
 #### 4. Memory Issues
 ```bash
 # Check Redis memory usage
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 info memory
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t info memory
 
 # Check pod resource usage
 kubectl top pod redis-0 -n redis
@@ -265,19 +265,19 @@ kubectl top pod redis-0 -n redis
 #### Memory Optimization
 ```bash
 # Update maxmemory policy
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 CONFIG SET maxmemory-policy allkeys-lru
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t CONFIG SET maxmemory-policy allkeys-lru
 
 # Check memory usage
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 info memory
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t info memory
 ```
 
 #### Persistence Tuning
 ```bash
 # Update AOF settings
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 CONFIG SET appendfsync everysec
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t CONFIG SET appendfsync everysec
 
 # Check persistence status
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 info persistence
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t info persistence
 ```
 
 ## Security
@@ -314,7 +314,7 @@ kubectl set image deployment/redis-exporter redis-exporter=oliver006/redis_expor
 kubectl get pods -n redis
 
 # Check Redis replication
-kubectl exec -it redis-0 -n redis -- redis-cli -a redis_password_2024 info replication
+kubectl exec -it redis-0 -n redis -- redis-cli -a Th1515T0p53cr3t info replication
 
 # Check Sentinel status
 kubectl exec -it redis-0 -n redis -- redis-cli -p 26379 sentinel masters
