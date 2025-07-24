@@ -59,9 +59,9 @@ spec:
           && chmod +x /usr/local/bin/mc
           
           # Create directories
-          mkdir -p /workspace/minio/data /workspace/minio/config \
-          mkdir -p /etc/redis \
-          mkdir -p /etc/postgresql/15/main \
+          mkdir -p /workspace/minio/data /workspace/minio/config \\
+          mkdir -p /etc/redis \\
+          mkdir -p /etc/postgresql/15/main \\
           mkdir -p /var/lib/postgresql/logfile
           
           # Configure Redis
