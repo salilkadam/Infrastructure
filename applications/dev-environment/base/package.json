@@ -1,0 +1,14 @@
+{
+    "name": "dev-environment-tests",
+    "version": "1.0.0",
+    "description": "Test scripts for local development environment",
+    "main": "test-local-services.js",
+    "scripts": {
+        "test": "node test-local-services.js"
+    },
+    "dependencies": {
+        "pg": "^8.11.0",
+        "redis": "^4.6.0",
+        "minio": "^7.1.0"
+    }
+}

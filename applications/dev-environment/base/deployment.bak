@@ -100,7 +100,7 @@ spec:
             secretKeyRef:
               key: secret-key
               name: minio-app
-        image: docker4zerocool/dev-environment:0ee0680cc803d0bf6ed725b71a14f829b18e5a3b
+        image: docker4zerocool/dev-environment:latest
         name: dev-environment
         ports:
         - containerPort: 22
@@ -141,4 +141,4 @@ spec:
       - name: ssh-keys
         secret:
           defaultMode: 256
-          secretName: dev-ssh-keys
+          secretName: dev-ssh-keys 

@@ -1,0 +1,38 @@
+name: Build and Push Dev Environment Docker Image
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'Dockerfile.dev-environment'
+      - 'applications/dev-environment/base/setup-local-services.sh'
+      - 'applications/dev-environment/base/test-local-services.py'
+      - 'applications/dev-environment/base/test-local-services.js'
+      - 'applications/dev-environment/base/package.json'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image (multi-arch)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.dev-environment
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            docker4zerocool/dev-environment:latest
+            docker4zerocool/dev-environment:${{ github.sha }} 

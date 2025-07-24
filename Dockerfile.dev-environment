@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1.4
+FROM ubuntu:22.04
+
+# Install system dependencies
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl wget git vim nano build-essential \
+    libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    redis-server postgresql postgresql-contrib \
+    net-tools locales python3 python3-pip python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get update && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages
+RUN pip3 install --no-cache-dir \
+    opencv-python redis minio psycopg2-binary numpy poetry
+
+# Download and install MinIO and mc
+RUN wget -O /usr/local/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio && \
+    chmod +x /usr/local/bin/minio && \
+    wget -O /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc && \
+    chmod +x /usr/local/bin/mc
+
+# Create workspace and data directories
+RUN mkdir -p /workspace/minio/data /workspace/minio/config /workspace/scripts /var/lib/postgresql/data
+
+# Copy test scripts and setup script
+COPY applications/dev-environment/base/setup-local-services.sh /workspace/scripts/setup-local-services.sh
+COPY applications/dev-environment/base/setup-local-services-simple.sh /workspace/scripts/setup-local-services-simple.sh
+COPY applications/dev-environment/base/package.json /workspace/package.json
+RUN cd /workspace && npm install
+
+# Copy test scripts from setup-local-services.sh (bake them in for health/integration checks)
+COPY applications/dev-environment/base/test-local-services.py /workspace/test-local-services.py
+COPY applications/dev-environment/base/test-local-services.js /workspace/test-local-services.js
+
+# Set environment variables for local services
+ENV LOCAL_REDIS_HOST=localhost \
+    LOCAL_REDIS_PORT=6379 \
+    LOCAL_REDIS_PASSWORD=Th1515T0p53cr3t \
+    LOCAL_MINIO_ENDPOINT=localhost:9000 \
+    LOCAL_MINIO_ACCESS_KEY=minioadmin \
+    LOCAL_MINIO_SECRET_KEY=minioadmin \
+    LOCAL_POSTGRES_HOST=localhost \
+    LOCAL_POSTGRES_PORT=5432 \
+    LOCAL_POSTGRES_DB=assetdb \
+    LOCAL_POSTGRES_USER=postgres \
+    LOCAL_POSTGRES_PASSWORD=Th1515T0p53cr3t
+
+# Expose ports
+EXPOSE 22 6379 9000 9001 5432
+
+# Healthcheck for Redis
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD redis-cli -h localhost -p 6379 -a $LOCAL_REDIS_PASSWORD ping | grep PONG || exit 1
+
+# Healthcheck for PostgreSQL
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD pg_isready -h localhost -p 5432 || exit 1
+
+# Healthcheck for MinIO
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:9000/minio/health/ready || exit 1
+
+# Entrypoint: run the setup script and keep the container alive
+CMD ["/bin/bash", "/workspace/scripts/setup-local-services.sh"] 

@@ -32,45 +32,28 @@ check_service() {
 setup_postgresql() {
     echo "Setting up local PostgreSQL..."
     
-    # Initialize PostgreSQL data directory
+    echo "Checking PostgreSQL data directory permissions:"
+    ls -ld /var/lib/postgresql/data
+    echo "Current user: $(whoami)"
     if [ ! -d "/var/lib/postgresql/data" ]; then
+        echo "Creating PostgreSQL data directory..."
         mkdir -p /var/lib/postgresql/data
         chown postgres:postgres /var/lib/postgresql/data
-        su - postgres -c "initdb -D /var/lib/postgresql/data"
     fi
-    
-    # Configure PostgreSQL
-    cat > /etc/postgresql/postgresql.conf << EOF
-listen_addresses = '*'
-port = 5432
-max_connections = 100
-shared_buffers = 256MB
-effective_cache_size = 1GB
-maintenance_work_mem = 64MB
-checkpoint_completion_target = 0.9
-wal_buffers = 16MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = 4MB
-min_wal_size = 1GB
-max_wal_size = 4GB
-max_worker_processes = 8
-max_parallel_workers_per_gather = 4
-max_parallel_workers = 8
-max_parallel_maintenance_workers = 4
-EOF
-
-    # Configure pg_hba.conf for local access
-    cat > /etc/postgresql/pg_hba.conf << EOF
-local   all             postgres                                peer
-local   all             all                                     md5
-host    all             all             127.0.0.1/32            md5
-host    all             all             ::1/128                 md5
-EOF
-
+    echo "Ensuring ownership:"
+    chown -R postgres:postgres /var/lib/postgresql/data || { echo "chown failed"; exit 1; }
+    ls -ld /var/lib/postgresql/data
+    echo "Initializing database cluster if needed..."
+    if [ -z "$(ls -A /var/lib/postgresql/data)" ]; then
+        echo "Data directory is empty, running initdb as postgres..."
+        su - postgres -c "/usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/data" || { echo "initdb failed"; exit 1; }
+    else
+        echo "Data directory is not empty, skipping initdb."
+    fi
+    echo "Contents of data directory:"
+    ls -l /var/lib/postgresql/data
     # Start PostgreSQL
-    su - postgres -c "pg_ctl -D /var/lib/postgresql/data -l /var/lib/postgresql/logfile start"
+    su - postgres -c "/usr/lib/postgresql/14/bin/pg_ctl -D /var/lib/postgresql/data -l /var/lib/postgresql/logfile start" || { echo "pg_ctl start failed"; exit 1; }
     
     # Wait for PostgreSQL to be ready
     sleep 5
@@ -467,3 +450,5 @@ main() {
 
 # Run main function
 main 
+# Keep the container running after setup
+ tail -f /dev/null 
