@@ -412,6 +412,11 @@ EOF
 main() {
     echo "Starting local development environment setup..."
     
+    # Start SSH server
+    echo "Starting SSH server..."
+    /usr/sbin/sshd -D &
+    echo "SSH server started on port 22"
+    
     # Setup services
     setup_postgresql
     setup_redis
@@ -428,6 +433,7 @@ main() {
     echo ""
     echo "=== Local Development Environment Setup Complete ==="
     echo "Services available at:"
+    echo "  SSH: localhost:22 (root login with SSH keys)"
     echo "  PostgreSQL: localhost:5432 (assetdb database)"
     echo "  Redis: localhost:6379 (with password)"
     echo "  MinIO: localhost:9000 (API)"

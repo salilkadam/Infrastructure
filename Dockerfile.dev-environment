@@ -8,6 +8,7 @@ RUN apt-get update && \
     libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
     redis-server postgresql postgresql-contrib \
     net-tools locales python3 python3-pip python3-venv \
+    openssh-server \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20.x
@@ -32,6 +33,12 @@ RUN mkdir -p /root/.ssh && \
     echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCnd/pJeGj03Z+YQFymb5matR2535Ygwl7eYfBNxREU6FxVG/bm/q+ZZeUTKd+jLAeLGbww9OKU7s7N5LMbJeguTaUnQ3JZtlyViQVMqnP2/K7wxy5S/MCiqupdb2VAQ2UjLWcI21XnDde1AwRwZluxNPPXhlDaCW5Ka4FCXfEIupzDFYPhyLAdG+keWY6xr58S1iXMkF8KNiHYaXy2hk5/HGz83pFGKsf3BDdcgFGf8hvtiFkZhy/yBxZuIxrxWtbK3cQHecOdHjfWXJKP79zTXphwHBHxcrLjpa5m6dTVxE4V23QPIx0wINdpyEtr9sFYbDkdiRCiLTG0OoRV+YEhE+hVTIP0xsA4xiRIms1Nxnd08fadmZC8DfnFVg4G6JiV39dm/4CZQCOf3wIjlN4IJaUxwHGblOg/xqfQnqibVvJlEakfmpxIF1g/3hSwudR52etwfE48yJi7JOsGpxdXT5zc6jpJE9SPmcroN91xbDAiUqIPYmnkN+NnV2IG5bk= root@cp1' >> /root/.ssh/authorized_keys && \
     chmod 600 /root/.ssh/authorized_keys && \
     chmod 700 /root/.ssh
+
+# Configure SSH server
+RUN mkdir -p /run/sshd && \
+    echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config && \
+    echo "PasswordAuthentication no" >> /etc/ssh/sshd_config && \
+    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 
 # Copy test scripts and setup script
 COPY applications/dev-environment/base/setup-local-services.sh /workspace/scripts/setup-local-services.sh
