@@ -21,6 +21,15 @@ spec:
         app.kubernetes.io/name: dev-environment
         app.kubernetes.io/part-of: infrastructure
     spec:
+      initContainers:
+      - name: ssh-setup
+        image: busybox
+        command: ['sh', '-c', 'chmod 700 /root/.ssh && chmod 600 /root/.ssh/authorized_keys']
+        volumeMounts:
+        - mountPath: /root/.ssh
+          name: ssh-keys
+        securityContext:
+          runAsUser: 0
       containers:
       - env:
         - name: LOCAL_REDIS_HOST
@@ -131,7 +140,7 @@ spec:
           name: workspace-storage
         - mountPath: /root/.ssh
           name: ssh-keys
-          readOnly: true
+          readOnly: false
       imagePullSecrets:
       - name: regcred
       volumes:
@@ -140,5 +149,5 @@ spec:
           claimName: dev-environment-pvc
       - name: ssh-keys
         secret:
-          defaultMode: 256
+          defaultMode: 384
           secretName: dev-ssh-keys
