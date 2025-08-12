@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: minio
-          image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+          image: minio/minio:RELEASE.2024-12-19T23-19-33Z
           args:
             - server
             - http://minio-{0...2}.minio-hl.minio.svc.cluster.local/data
