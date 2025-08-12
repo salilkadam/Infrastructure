@@ -11,6 +11,7 @@ resources:
   - service-console.yaml
   - ingress.yaml
   - ingress-https.yaml
+  - ingress-console.yaml
   - cert-clusterissuer-selfsigned.yaml
   - cert-ca-issuer.yaml
   - cert-internal-ca.yaml
