@@ -68,14 +68,14 @@ spec:
             httpGet:
               path: /minio/health/live
               port: 9000
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /minio/health/ready
               port: 9000
-              scheme: HTTPS
+              scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
