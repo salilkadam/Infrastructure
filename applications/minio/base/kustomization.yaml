@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - secret.yaml
+  - secret-access-all-buckets.yaml
   - configmap.yaml
   - statefulset.yaml
   - service-hl.yaml
