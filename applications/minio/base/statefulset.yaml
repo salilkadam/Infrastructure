@@ -25,6 +25,7 @@ spec:
             runAsGroup: 1001
             allowPrivilegeEscalation: false
           args:
+            - minio
             - server
             - http://minio-{0...1}.minio-hl.minio.svc.cluster.local/data
             - --console-address
