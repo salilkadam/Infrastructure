@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-smi-test-basic
+  labels:
+    app: gpu-test
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: gpu-server
+  containers:
+  - name: smi
+    image: nvidia/cuda:12.4.1-base-ubuntu22.04
+    command: ["bash","-lc","set -e; nvidia-smi || (echo 'nvidia-smi missing'; ldconfig -p | grep -i nvidia || true; sleep 3; exit 1)"]
+    resources:
+      limits:
+        nvidia.com/gpu: 1

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: nvidia-device-plugin
+  labels:
+    name: nvidia-device-plugin-ds
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      serviceAccountName: nvidia-device-plugin
+      priorityClassName: system-node-critical
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: nvidia-device-plugin-ctr
+        image: nvcr.io/nvidia/k8s-device-plugin:v0.17.3
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DEVICE_LIST_STRATEGY
+          value: envvar
+        - name: PASS_DEVICE_SPECS
+          value: "true"
+        - name: FAIL_ON_INIT_ERROR
+          value: "false"
+        - name: LD_LIBRARY_PATH
+          value: /usr/local/nvidia/lib
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: kubelet-device-plugins-dir
+          mountPath: /var/lib/kubelet/device-plugins
+        - name: host-root
+          mountPath: /host
+          readOnly: true
+        - name: host-nvml
+          mountPath: /usr/local/nvidia/lib/libnvidia-ml.so.1
+        - name: host-dev
+          mountPath: /dev
+      volumes:
+      - name: kubelet-device-plugins-dir
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+          type: DirectoryOrCreate
+      - name: host-root
+        hostPath:
+          path: /
+      - name: host-nvml
+        hostPath:
+          path: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+          type: File
+      - name: host-dev
+        hostPath:
+          path: /dev
