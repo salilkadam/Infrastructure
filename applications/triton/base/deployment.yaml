@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton
+  namespace: triton
+  labels:
+    app.kubernetes.io/name: triton
+    app.kubernetes.io/part-of: triton
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: triton
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: triton
+        app.kubernetes.io/part-of: triton
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+        kubernetes.io/hostname: gpu-server
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      runtimeClassName: nvidia-experimental
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: triton
+      imagePullSecrets:
+      - name: nvcr-secret
+      containers:
+      - name: triton
+        image: nvcr.io/nvidia/tritonserver:24.08-py3
+        imagePullPolicy: IfNotPresent
+        args:
+        - --model-repository=/models
+        - --http-port=8000
+        - --grpc-port=8001
+        - --metrics-port=8002
+        - --allow-http=true
+        - --allow-grpc=true
+        - --response-cache-byte-size=268435456
+        - --pinned-memory-pool-byte-size=268435456
+        - --cuda-memory-pool-byte-size=0:268435456
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8001
+          name: grpc
+        - containerPort: 8002
+          name: metrics
+        resources:
+          limits:
+            cpu: "2"
+            memory: 8Gi
+            nvidia.com/gpu: 1
+          requests:
+            cpu: "500m"
+            memory: 2Gi
+            nvidia.com/gpu: 1
+        volumeMounts:
+        - name: model-repo
+          mountPath: /models
+        readinessProbe:
+          httpGet:
+            path: /v2/health/ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /v2/health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: model-repo
+        persistentVolumeClaim:
+          claimName: triton-model-repo
+      terminationGracePeriodSeconds: 60
+
