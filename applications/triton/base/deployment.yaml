@@ -28,14 +28,7 @@ spec:
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule
-      runtimeClassName: nvidia-experimental
-      topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: triton
+      # runtimeClassName removed; rely on CDI/device plugin
       imagePullSecrets:
       - name: nvcr-secret
       containers:
