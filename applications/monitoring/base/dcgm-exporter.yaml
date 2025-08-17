@@ -22,15 +22,14 @@ spec:
     spec:
       nodeSelector:
         nvidia.com/gpu.present: "true"
-      imagePullSecrets:
-      - name: nvcr-secret
+      imagePullSecrets: []
       tolerations:
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule
       containers:
       - name: dcgm-exporter
-        image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.5-3.2.9-ubuntu22.04
+        image: nvidia/dcgm-exporter:2.4.7-2.6.5-ubuntu20.04
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9400
