@@ -164,6 +164,13 @@ data:
         metrics_path: /metrics
         scrape_interval: 15s
 
+      # Triton metrics served by Docker container on gpu-server
+      - job_name: 'triton-docker'
+        static_configs:
+          - targets: ['192.168.0.110:8002']
+        metrics_path: /metrics
+        scrape_interval: 15s
+
   alert_rules.yml: |
     groups:
       - name: infrastructure
