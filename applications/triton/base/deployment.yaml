@@ -34,12 +34,15 @@ spec:
         operator: Exists
         effect: NoSchedule
       # runtimeClassName removed; rely on CDI/device plugin
+      runtimeClassName: nvidia
       imagePullSecrets:
       - name: nvcr-secret
       containers:
       - name: triton
         image: nvcr.io/nvidia/tritonserver:24.08-py3
         imagePullPolicy: IfNotPresent
+        command:
+        - tritonserver
         args:
         - --model-repository=/models
         - --http-port=8000
