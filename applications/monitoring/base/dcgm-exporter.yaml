@@ -30,7 +30,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: dcgm-exporter
-        image: nvidia/dcgm-exporter:3.4.0-1-ubuntu22.04
+        image: nvidia/dcgm-exporter:3.3.4-3.1.8-ubuntu22.04
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9400
@@ -40,6 +40,8 @@ spec:
           value: ":9400"
         - name: DCGM_EXPORTER_COLLECTORS
           value: "/etc/dcgm-exporter/default-counters.csv"
+        securityContext:
+          privileged: true
         volumeMounts:
         - name: pod-metrics
           mountPath: /var/lib/kubelet/pod-resources
