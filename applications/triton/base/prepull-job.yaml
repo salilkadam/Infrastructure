@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: triton-prepull
+  namespace: triton
+  labels:
+    app.kubernetes.io/name: triton
+    app.kubernetes.io/part-of: triton
+spec:
+  ttlSecondsAfterFinished: 1800
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: triton
+        app.kubernetes.io/part-of: triton
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: gpu-server
+      imagePullSecrets:
+      - name: nvcr-secret
+      restartPolicy: Never
+      containers:
+      - name: pull-triton-image
+        image: nvcr.io/nvidia/tritonserver:24.08-py3
+        imagePullPolicy: IfNotPresent
+        command: ["sh","-c","echo 'Pre-pulled nvcr.io/nvidia/tritonserver:24.08-py3' && sleep 1"]
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+

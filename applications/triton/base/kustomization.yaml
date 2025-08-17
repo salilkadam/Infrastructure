@@ -9,6 +9,7 @@ resources:
 - ingress.yaml
 - ingress-grpc.yaml
 - hpa.yaml
+- prepull-job.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: triton
