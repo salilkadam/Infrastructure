@@ -1,20 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: triton
-resources:
-- namespace.yaml
-- pvc.yaml
-- deployment.yaml
-- service.yaml
-- ingress.yaml
-- ingress-grpc.yaml
-- hpa.yaml
-- prepull-job.yaml
+resources: []
 labels:
 - pairs:
     app.kubernetes.io/part-of: triton
     app.kubernetes.io/name: triton
-images:
-- name: nvcr.io/nvidia/tritonserver
-  newTag: 22.12-py3
+images: []
 
