@@ -16,7 +16,6 @@ resources:
 - postgres-exporter.yaml
 - ingress.yaml
 - cluster-issuer.yaml
-- dcgm-exporter.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: infrastructure
