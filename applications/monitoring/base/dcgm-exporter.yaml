@@ -30,7 +30,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: dcgm-exporter
-        image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.3.4-ubuntu22.04
+        image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.5-3.2.9-ubuntu22.04
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9400
