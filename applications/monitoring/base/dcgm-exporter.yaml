@@ -22,6 +22,8 @@ spec:
     spec:
       nodeSelector:
         nvidia.com/gpu.present: "true"
+      imagePullSecrets:
+      - name: nvcr-secret
       tolerations:
       - key: nvidia.com/gpu
         operator: Exists
