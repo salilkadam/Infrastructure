@@ -34,7 +34,7 @@ spec:
         operator: Exists
         effect: NoSchedule
       # runtimeClassName removed; rely on CDI/device plugin
-      runtimeClassName: nvidia
+      # Use default runtime; NVIDIA device plugin will inject devices/libs
       imagePullSecrets:
       - name: nvcr-secret
       containers:
