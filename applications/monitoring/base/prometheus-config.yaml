@@ -62,9 +62,6 @@ data:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
             regex: true
-          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
-            action: keep
-            regex: triton
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
             action: replace
             target_label: __metrics_path__
@@ -159,6 +156,13 @@ data:
           - targets: ['adminer.postgres.svc.cluster.local:80']
         metrics_path: /
         scrape_interval: 60s
+
+      # DCGM exporter running via Docker on gpu-server
+      - job_name: 'dcgm-docker'
+        static_configs:
+          - targets: ['192.168.0.110:9400']
+        metrics_path: /metrics
+        scrape_interval: 15s
 
   alert_rules.yml: |
     groups:
