@@ -44,7 +44,7 @@ spec:
         command:
         - tritonserver
         args:
-        - --model-repository=/models
+        - --model-repository=/models/repo
         - --http-port=8000
         - --grpc-port=8001
         - --metrics-port=8002
@@ -89,4 +89,11 @@ spec:
         persistentVolumeClaim:
           claimName: triton-model-repo
       terminationGracePeriodSeconds: 60
+      initContainers:
+      - name: init-model-repo
+        image: busybox:1.36
+        command: ["sh","-c","mkdir -p /models/repo && chown -R 1000:1000 /models/repo || true"]
+        volumeMounts:
+        - name: model-repo
+          mountPath: /models
 
